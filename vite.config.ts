@@ -4,6 +4,9 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
+  // Served from '/' locally and on root hosts (Vercel/Netlify/Cloudflare Pages).
+  // On GitHub Pages project sites the app is under '/<repo>/', so CI sets BASE_PATH.
+  base: process.env.BASE_PATH || '/',
   plugins: [
     react(),
     VitePWA({
