@@ -1,10 +1,12 @@
-import type { Book, ReadingState, StoredSource } from '@/domain/book/types';
+import type { Annotation, Book, ReadingState, StoredSource } from '@/domain/book/types';
 import {
+  STORE_ANNOTATIONS,
   STORE_BOOKS,
   STORE_READING_STATE,
   STORE_SOURCES,
   get,
   getAll,
+  getAllByIndex,
   put,
   remove,
 } from './db';
@@ -46,5 +48,17 @@ export const sourceRepository = {
   },
   save(source: StoredSource): Promise<void> {
     return put(STORE_SOURCES, source);
+  },
+};
+
+export const annotationRepository = {
+  listByBook(bookId: string): Promise<Annotation[]> {
+    return getAllByIndex<Annotation>(STORE_ANNOTATIONS, 'byBook', bookId);
+  },
+  save(annotation: Annotation): Promise<void> {
+    return put(STORE_ANNOTATIONS, annotation);
+  },
+  remove(id: string): Promise<void> {
+    return remove(STORE_ANNOTATIONS, id);
   },
 };

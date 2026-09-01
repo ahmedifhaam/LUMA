@@ -1,13 +1,29 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { Annotation } from '@/domain/book/types';
 import type { PageGeometry } from '@/domain/document/types';
 import { useReaderStore } from '@/application/reader/reader-store';
+import { useAnnotationsStore } from '@/application/annotations/annotations-store';
 import { PageCanvas } from './PageCanvas';
 import { useVirtualPages } from './useVirtualPages';
+import { getSelectionHighlight, type SelectionHighlight } from './selection';
+import { OutlinePanel } from './panels/OutlinePanel';
+import { SearchPanel } from './panels/SearchPanel';
+import { BookmarksPanel } from './panels/BookmarksPanel';
+import { NotesPanel } from './panels/NotesPanel';
 
 const PAGE_GAP = 16;
 const OVERSCAN = 2;
 const MAX_SCALE = 2;
 const HORIZONTAL_PADDING = 48;
+
+type PanelId = 'contents' | 'search' | 'bookmarks' | 'notes';
+
+const PANELS: { id: PanelId; label: string; icon: string }[] = [
+  { id: 'contents', label: 'Contents', icon: '☰' },
+  { id: 'search', label: 'Search', icon: '🔍' },
+  { id: 'bookmarks', label: 'Bookmarks', icon: '🔖' },
+  { id: 'notes', label: 'Notes', icon: '✎' },
+];
 
 interface ReaderViewProps {
   onExit: () => void;
@@ -22,11 +38,17 @@ export function ReaderView({ onExit }: ReaderViewProps) {
   const progress = useReaderStore((s) => s.progress);
   const updateLocation = useReaderStore((s) => s.updateLocation);
 
+  const annotations = useAnnotationsStore((s) => s.annotations);
+  const toggleBookmark = useAnnotationsStore((s) => s.toggleBookmark);
+  const addHighlight = useAnnotationsStore((s) => s.addHighlight);
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const [base, setBase] = useState<PageGeometry | null>(null);
   const [containerWidth, setContainerWidth] = useState(0);
   const [currentPage, setCurrentPage] = useState(location.pageNumber);
   const [pageInput, setPageInput] = useState(String(location.pageNumber));
+  const [activePanel, setActivePanel] = useState<PanelId | null>(null);
+  const [selection, setSelection] = useState<SelectionHighlight | null>(null);
   const restoredRef = useRef(false);
 
   useEffect(() => {
@@ -43,7 +65,7 @@ export function ReaderView({ onExit }: ReaderViewProps) {
     const observer = new ResizeObserver(measure);
     observer.observe(el);
     return () => observer.disconnect();
-  }, [status]);
+  }, [status, activePanel]);
 
   const scale = useMemo(() => {
     if (!base || containerWidth === 0) return 1;
@@ -62,6 +84,25 @@ export function ReaderView({ onExit }: ReaderViewProps) {
     OVERSCAN,
   );
 
+  const highlightsByPage = useMemo(() => {
+    const map = new Map<number, Annotation[]>();
+    for (const a of annotations) {
+      if (a.type !== 'highlight') continue;
+      const list = map.get(a.location.pageNumber) ?? [];
+      list.push(a);
+      map.set(a.location.pageNumber, list);
+    }
+    return map;
+  }, [annotations]);
+
+  const isBookmarked = useMemo(
+    () =>
+      annotations.some(
+        (a) => a.type === 'bookmark' && a.location.pageNumber === currentPage,
+      ),
+    [annotations, currentPage],
+  );
+
   const goToPage = useCallback(
     (page: number) => {
       const el = scrollRef.current;
@@ -72,7 +113,6 @@ export function ReaderView({ onExit }: ReaderViewProps) {
     [offsetForPage, slotHeight, pageCount],
   );
 
-  // Restore the saved reading position once geometry is known.
   useEffect(() => {
     if (restoredRef.current || !base || slotHeight <= 0 || pageCount === 0) return;
     const el = scrollRef.current;
@@ -88,6 +128,7 @@ export function ReaderView({ onExit }: ReaderViewProps) {
   const handleScroll = useCallback(() => {
     const el = scrollRef.current;
     if (!el || !restoredRef.current) return;
+    setSelection(null);
     onScroll(el.scrollTop, el.clientHeight);
     const page = pageAtScroll(el.scrollTop, el.clientHeight);
     const yOffset = Math.min(
@@ -99,10 +140,34 @@ export function ReaderView({ onExit }: ReaderViewProps) {
     updateLocation({ pageNumber: page, yOffset });
   }, [onScroll, pageAtScroll, offsetForPage, slotHeight, updateLocation]);
 
+  const handlePointerUp = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setSelection(getSelectionHighlight(el));
+  }, []);
+
+  const commitHighlight = useCallback(() => {
+    if (!selection) return;
+    void addHighlight({
+      location: { pageNumber: selection.pageNumber, yOffset: selection.yOffset },
+      quote: selection.quote,
+      rects: selection.rects,
+    });
+    window.getSelection()?.removeAllRanges();
+    setSelection(null);
+  }, [selection, addHighlight]);
+
   const submitPage = useCallback(() => {
     const parsed = Number.parseInt(pageInput, 10);
     if (Number.isFinite(parsed)) goToPage(parsed);
   }, [pageInput, goToPage]);
+
+  const navigateFromPanel = useCallback(
+    (page: number) => {
+      goToPage(page);
+    },
+    [goToPage],
+  );
 
   if (status === 'opening') {
     return <div className="reader-status">Opening book…</div>;
@@ -132,6 +197,19 @@ export function ReaderView({ onExit }: ReaderViewProps) {
         <div className="reader__title" title={book.title}>
           {book.title}
         </div>
+
+        <button
+          className={`btn btn--icon${isBookmarked ? ' btn--active' : ''}`}
+          aria-pressed={isBookmarked}
+          aria-label={
+            isBookmarked ? 'Remove bookmark on this page' : 'Bookmark this page'
+          }
+          title={isBookmarked ? 'Remove bookmark' : 'Bookmark this page'}
+          onClick={() => void toggleBookmark({ pageNumber: currentPage, yOffset: 0 })}
+        >
+          {isBookmarked ? '🔖' : '🏷'}
+        </button>
+
         <div className="reader__nav">
           <button
             className="btn btn--icon"
@@ -165,6 +243,23 @@ export function ReaderView({ onExit }: ReaderViewProps) {
             ›
           </button>
         </div>
+
+        <div className="reader__panel-tabs">
+          {PANELS.map((panel) => (
+            <button
+              key={panel.id}
+              className={`btn btn--icon${activePanel === panel.id ? ' btn--active' : ''}`}
+              aria-label={panel.label}
+              aria-pressed={activePanel === panel.id}
+              title={panel.label}
+              onClick={() =>
+                setActivePanel((current) => (current === panel.id ? null : panel.id))
+              }
+            >
+              {panel.icon}
+            </button>
+          ))}
+        </div>
       </header>
 
       {!book.hasText && (
@@ -181,25 +276,73 @@ export function ReaderView({ onExit }: ReaderViewProps) {
         />
       </div>
 
-      <div className="reader__viewport" ref={scrollRef} onScroll={handleScroll}>
-        {base ? (
-          <div className="reader__pages" style={{ height: totalHeight }}>
-            {pages.map((page) => (
-              <PageCanvas
-                key={page}
-                doc={doc}
-                pageNumber={page}
-                scale={scale}
-                width={pageWidth}
-                height={pageHeight}
-                top={offsetForPage(page)}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="reader-status">Preparing document…</div>
+      <div className="reader__body">
+        <div
+          className="reader__viewport"
+          ref={scrollRef}
+          onScroll={handleScroll}
+          onMouseUp={handlePointerUp}
+        >
+          {base ? (
+            <div className="reader__pages" style={{ height: totalHeight }}>
+              {pages.map((page) => (
+                <PageCanvas
+                  key={page}
+                  doc={doc}
+                  pageNumber={page}
+                  scale={scale}
+                  width={pageWidth}
+                  height={pageHeight}
+                  top={offsetForPage(page)}
+                  highlights={highlightsByPage.get(page) ?? []}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="reader-status">Preparing document…</div>
+          )}
+        </div>
+
+        {activePanel && (
+          <aside className="reader__panel" aria-label={`${activePanel} panel`}>
+            <div className="reader__panel-head">
+              <span className="reader__panel-title">
+                {PANELS.find((p) => p.id === activePanel)?.label}
+              </span>
+              <button
+                className="btn btn--icon"
+                aria-label="Close panel"
+                onClick={() => setActivePanel(null)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="reader__panel-body">
+              {activePanel === 'contents' && (
+                <OutlinePanel onNavigate={navigateFromPanel} />
+              )}
+              {activePanel === 'search' && <SearchPanel onNavigate={navigateFromPanel} />}
+              {activePanel === 'bookmarks' && (
+                <BookmarksPanel onNavigate={navigateFromPanel} />
+              )}
+              {activePanel === 'notes' && (
+                <NotesPanel currentPage={currentPage} onNavigate={navigateFromPanel} />
+              )}
+            </div>
+          </aside>
         )}
       </div>
+
+      {selection && (
+        <button
+          className="selection-popover"
+          style={{ left: selection.anchorX, top: selection.anchorY + 8 }}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={commitHighlight}
+        >
+          Highlight
+        </button>
+      )}
     </div>
   );
 }

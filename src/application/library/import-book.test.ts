@@ -32,6 +32,8 @@ function makeFakeEngine(pageCount: number, hasText: boolean): DocumentEngine {
           cancel: () => {},
         }),
         extractPageText: async () => '',
+        renderTextLayer: () => ({ promise: Promise.resolve(), cancel: () => {} }),
+        getOutline: async () => [],
         destroy: async () => {},
       };
     },
