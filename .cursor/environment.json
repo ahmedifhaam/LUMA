@@ -1,0 +1,11 @@
+{
+  "name": "LUMA — Personal Reading & Knowledge Platform",
+  "install": "npm ci",
+  "terminals": [
+    {
+      "name": "dev",
+      "command": "npm run dev"
+    }
+  ],
+  "ports": [5173]
+}
