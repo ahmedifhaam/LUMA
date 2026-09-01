@@ -15,8 +15,10 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
-    { name: 'mobile', use: { ...devices['Pixel 7'] } },
+    // Use the system-installed Google Chrome ("chrome" channel) so no separate
+    // Playwright browser download is required in constrained environments.
+    { name: 'chromium', use: { ...devices['Desktop Chrome'], channel: 'chrome' } },
+    { name: 'mobile', use: { ...devices['Pixel 7'], channel: 'chrome' } },
   ],
   webServer: {
     command: 'npm run dev',

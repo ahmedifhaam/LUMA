@@ -40,6 +40,14 @@ export interface DocumentLocation {
   yOffset: number;
 }
 
+/** A navigable entry in the document's table of contents. */
+export interface DocumentOutlineItem {
+  title: string;
+  /** Resolved 1-based page number, or null when it cannot be resolved. */
+  pageNumber: number | null;
+  children: DocumentOutlineItem[];
+}
+
 export interface RenderResult {
   canvas: HTMLCanvasElement;
   width: number;
@@ -48,6 +56,12 @@ export interface RenderResult {
 
 export interface RenderTask {
   readonly promise: Promise<RenderResult>;
+  cancel(): void;
+}
+
+/** A cancellable text-layer render into a caller-provided container element. */
+export interface TextLayerTask {
+  readonly promise: Promise<void>;
   cancel(): void;
 }
 
@@ -62,6 +76,14 @@ export interface OpenDocument {
   getPageGeometry(pageNumber: number): Promise<PageGeometry>;
   renderPage(pageNumber: number, scale: number): RenderTask;
   extractPageText(pageNumber: number): Promise<string>;
+  /** Render a selectable text layer for a page into the given container. */
+  renderTextLayer(
+    pageNumber: number,
+    scale: number,
+    container: HTMLElement,
+  ): TextLayerTask;
+  /** The document's table of contents, or an empty array when none exists. */
+  getOutline(): Promise<DocumentOutlineItem[]>;
   destroy(): Promise<void>;
 }
 

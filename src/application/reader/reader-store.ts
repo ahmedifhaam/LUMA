@@ -1,12 +1,18 @@
 import { create } from 'zustand';
 import type { Book, ReadingState } from '@/domain/book/types';
-import type { DocumentLocation, OpenDocument } from '@/domain/document/types';
+import type {
+  DocumentLocation,
+  DocumentOutlineItem,
+  OpenDocument,
+} from '@/domain/document/types';
 import { pdfEngine } from '@/infrastructure/document-engine/pdfjs/pdf-engine';
 import {
   bookRepository,
   readingStateRepository,
   sourceRepository,
 } from '@/infrastructure/persistence/repositories';
+import { useAnnotationsStore } from '@/application/annotations/annotations-store';
+import { useSearchStore } from '@/application/search/search-store';
 
 type ReaderStatus = 'idle' | 'opening' | 'ready' | 'error';
 
@@ -14,6 +20,7 @@ interface ReaderState {
   status: ReaderStatus;
   book: Book | null;
   doc: OpenDocument | null;
+  outline: DocumentOutlineItem[];
   error: string | null;
   location: DocumentLocation;
   progress: number;
@@ -36,6 +43,7 @@ export const useReaderStore = create<ReaderState>((set, get) => ({
   status: 'idle',
   book: null,
   doc: null,
+  outline: [],
   error: null,
   location: { pageNumber: 1, yOffset: 0 },
   progress: 0,
@@ -48,7 +56,7 @@ export const useReaderStore = create<ReaderState>((set, get) => ({
     const previous = get().doc;
     if (previous) await previous.destroy().catch(() => undefined);
 
-    set({ status: 'opening', book: null, doc: null, error: null });
+    set({ status: 'opening', book: null, doc: null, outline: [], error: null });
 
     try {
       const [book, source, reading] = await Promise.all([
@@ -64,6 +72,7 @@ export const useReaderStore = create<ReaderState>((set, get) => ({
 
       const doc = await pdfEngine.open(source.bytes);
       const location = reading?.location ?? { pageNumber: 1, yOffset: 0 };
+      const outline = await doc.getOutline().catch(() => []);
 
       await bookRepository.save({ ...book, lastOpenedAt: Date.now() });
 
@@ -71,10 +80,16 @@ export const useReaderStore = create<ReaderState>((set, get) => ({
         status: 'ready',
         book,
         doc,
+        outline,
         location,
         progress: progressFor(location, doc.metadata.pageCount),
         error: null,
       });
+
+      // Load annotations and build the current-book search index in the
+      // background; neither should block first paint of the reader.
+      void useAnnotationsStore.getState().load(bookId);
+      void useSearchStore.getState().buildIndex(doc, bookId);
     } catch (error) {
       set({ status: 'error', error: (error as Error).message });
     }
@@ -88,7 +103,9 @@ export const useReaderStore = create<ReaderState>((set, get) => ({
     await get().flushReadingState();
     const doc = get().doc;
     if (doc) await doc.destroy().catch(() => undefined);
-    set({ status: 'idle', book: null, doc: null, error: null });
+    useAnnotationsStore.getState().clear();
+    useSearchStore.getState().clear();
+    set({ status: 'idle', book: null, doc: null, outline: [], error: null });
   },
 
   updateLocation(location) {

@@ -33,3 +33,32 @@ export interface StoredSource {
   bookId: string;
   bytes: ArrayBuffer;
 }
+
+export type AnnotationType = 'bookmark' | 'highlight' | 'note';
+
+/** A normalized rectangle within a page, coordinates in [0,1] from top-left. */
+export interface NormalizedRect {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * A reading annotation anchored to a stable {@link DocumentLocation} (never a DOM
+ * node), so it can be reconstructed after reopening the document. See Phase 1
+ * brief sections 10-11.
+ */
+export interface Annotation {
+  id: string;
+  bookId: string;
+  type: AnnotationType;
+  location: DocumentLocation;
+  /** User text for notes, or an optional comment on a highlight. */
+  note?: string;
+  /** The selected text captured for a highlight. */
+  quote?: string;
+  /** Highlight geometry on the page, in normalized coordinates. */
+  rects?: NormalizedRect[];
+  createdAt: number;
+}

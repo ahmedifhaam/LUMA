@@ -9,10 +9,12 @@ import type {
   DocumentEngine,
   DocumentIdentity,
   DocumentMetadata,
+  DocumentOutlineItem,
   OpenDocument,
   PageGeometry,
   RenderResult,
   RenderTask,
+  TextLayerTask,
 } from '@/domain/document/types';
 import { computeFingerprint } from '@/application/document-identity/fingerprint';
 
@@ -93,6 +95,73 @@ class PdfDocument implements OpenDocument {
       .join(' ')
       .replace(/\s+/g, ' ')
       .trim();
+  }
+
+  renderTextLayer(
+    pageNumber: number,
+    scale: number,
+    container: HTMLElement,
+  ): TextLayerTask {
+    let textLayer: { render(): Promise<void>; cancel(): void } | null = null;
+    let cancelled = false;
+
+    const promise = (async (): Promise<void> => {
+      const page = await this.#page(pageNumber);
+      if (cancelled) return;
+      const viewport = page.getViewport({ scale });
+      // The pdf.js text layer sizes glyphs relative to this CSS variable.
+      container.style.setProperty('--scale-factor', String(scale));
+      textLayer = new pdfjs.TextLayer({
+        textContentSource: page.streamTextContent(),
+        container,
+        viewport,
+      });
+      await textLayer.render();
+    })();
+
+    return {
+      promise,
+      cancel() {
+        cancelled = true;
+        textLayer?.cancel();
+      },
+    };
+  }
+
+  async getOutline(): Promise<DocumentOutlineItem[]> {
+    const raw = await this.#doc.getOutline().catch(() => null);
+    if (!raw) return [];
+
+    const resolvePage = async (dest: unknown): Promise<number | null> => {
+      try {
+        const explicit =
+          typeof dest === 'string' ? await this.#doc.getDestination(dest) : dest;
+        if (!Array.isArray(explicit) || explicit.length === 0) return null;
+        const ref = explicit[0];
+        if (ref == null || typeof ref !== 'object') return null;
+        const index = await this.#doc.getPageIndex(
+          ref as Parameters<PDFDocumentProxy['getPageIndex']>[0],
+        );
+        return index + 1;
+      } catch {
+        return null;
+      }
+    };
+
+    type RawOutline = { title: string; dest: unknown; items: RawOutline[] };
+    const map = async (items: RawOutline[]): Promise<DocumentOutlineItem[]> => {
+      const result: DocumentOutlineItem[] = [];
+      for (const item of items) {
+        result.push({
+          title: item.title,
+          pageNumber: await resolvePage(item.dest),
+          children: item.items?.length ? await map(item.items) : [],
+        });
+      }
+      return result;
+    };
+
+    return map(raw as unknown as RawOutline[]);
   }
 
   async destroy(): Promise<void> {
