@@ -44,6 +44,8 @@ export async function importBook(
       return { book: updated, isDuplicate: true };
     }
 
+    const coverThumbnail = (await doc.extractCoverThumbnail?.()) ?? null;
+
     const now = Date.now();
     const book: Book = {
       id: doc.identity.fingerprint,
@@ -55,6 +57,7 @@ export async function importBook(
       sourceName: source.name,
       createdAt: now,
       lastOpenedAt: null,
+      coverThumbnail,
     };
 
     await bookRepository.save(book);

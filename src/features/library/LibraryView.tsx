@@ -103,6 +103,14 @@ export function LibraryView({ onOpenBook }: LibraryViewProps) {
             className="continue-card"
             onClick={() => onOpenBook(continueReading.id)}
           >
+            {continueReading.coverThumbnail ? (
+              <img
+                className="continue-card__cover"
+                src={continueReading.coverThumbnail}
+                alt=""
+                aria-hidden
+              />
+            ) : null}
             <div className="continue-card__info">
               <span className="continue-card__name">{continueReading.title}</span>
               <span className="continue-card__meta">
@@ -133,9 +141,18 @@ export function LibraryView({ onOpenBook }: LibraryViewProps) {
                   onClick={() => onOpenBook(book.id)}
                   aria-label={`Open ${book.title}`}
                 >
-                  <span className="book-card__initial">
-                    {book.title.charAt(0).toUpperCase()}
-                  </span>
+                  {book.coverThumbnail ? (
+                    <img
+                      className="book-card__image"
+                      src={book.coverThumbnail}
+                      alt=""
+                      aria-hidden
+                    />
+                  ) : (
+                    <span className="book-card__initial">
+                      {book.title.charAt(0).toUpperCase()}
+                    </span>
+                  )}
                   {!book.hasText && <span className="book-card__badge">Scanned</span>}
                 </button>
                 <div className="book-card__body">

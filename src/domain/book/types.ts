@@ -17,6 +17,8 @@ export interface Book {
   sourceName: string;
   createdAt: number;
   lastOpenedAt: number | null;
+  /** JPEG data URL for library cover display, when available at import. */
+  coverThumbnail: string | null;
 }
 
 export interface ReadingState {
