@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { Annotation } from '@/domain/book/types';
 import type { PageGeometry } from '@/domain/document/types';
+import { AppMenu } from '@/features/menu/AppMenu';
 import { useReaderStore } from '@/application/reader/reader-store';
 import { useAnnotationsStore } from '@/application/annotations/annotations-store';
 import { PageCanvas } from './PageCanvas';
@@ -456,15 +457,6 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
         </div>
 
         <div className="reader__panel-tabs">
-          <button
-            className="btn btn--icon"
-            aria-label="Keyboard shortcuts"
-            title="Keyboard shortcuts (?)"
-            data-testid="open-shortcuts"
-            onClick={onOpenShortcuts}
-          >
-            ?
-          </button>
           {PANELS.map((panel) => (
             <button
               key={panel.id}
@@ -479,6 +471,7 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
               {panel.icon}
             </button>
           ))}
+          <AppMenu onOpenShortcuts={onOpenShortcuts} />
         </div>
       </header>
 

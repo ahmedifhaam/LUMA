@@ -15,10 +15,13 @@ export async function signInViaUi(
   username = PHASE2_TEST_USER.username,
   password = PHASE2_TEST_USER.password,
 ): Promise<void> {
-  await page.getByTestId('auth-sign-in-button').click();
+  await page.getByTestId('app-menu-trigger').click();
+  await page.getByTestId('app-menu-sign-in').click();
   await page.getByTestId('auth-username').fill(username);
   await page.getByTestId('auth-password').fill(password);
   await page.getByTestId('auth-submit').click();
+  await page.getByTestId('auth-modal').waitFor({ state: 'hidden', timeout: 15_000 });
+  await page.getByTestId('app-menu-trigger').click();
   await page.getByTestId('auth-user-label').waitFor({ timeout: 15_000 });
 }
 

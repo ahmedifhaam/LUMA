@@ -37,6 +37,11 @@ export async function captureStep(page: Page, name: string): Promise<void> {
   });
 }
 
+export async function openShortcuts(page: Page): Promise<void> {
+  await page.getByTestId('app-menu-trigger').click();
+  await page.getByTestId('open-shortcuts').click();
+}
+
 export async function importBook(page: Page, filePath: string): Promise<void> {
   await page.goto('/');
   await page.setInputFiles('[data-testid="file-input"]', filePath);

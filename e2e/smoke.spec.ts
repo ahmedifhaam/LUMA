@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { openShortcuts } from './helpers/test-utils';
 
 test('library shell loads with an empty state', async ({ page }) => {
   await page.goto('/');
@@ -9,7 +10,7 @@ test('library shell loads with an empty state', async ({ page }) => {
     'accept',
     /application\/epub\+zip/,
   );
-  await page.getByTestId('open-shortcuts').click();
+  await openShortcuts(page);
   await expect(page.getByRole('heading', { name: 'Keyboard shortcuts' })).toBeVisible();
   await expect(page.getByText('Previous / next page').first()).toBeVisible();
 });
