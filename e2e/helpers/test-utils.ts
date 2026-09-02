@@ -47,3 +47,46 @@ export async function currentPageNumber(page: Page): Promise<number> {
   const value = await page.getByLabel('Go to page').inputValue();
   return Number.parseInt(value, 10);
 }
+
+export async function captureViewport(page: Page, name: string): Promise<void> {
+  await page.locator('[data-reader-viewport]').screenshot({
+    path: join(SCREENSHOTS, `${name}.png`),
+  });
+}
+
+export async function setZoomLevel(page: Page, targetLabel: string): Promise<void> {
+  const bottomBar = page.getByTestId('reader-bottom-bar');
+  const zoomLabel = bottomBar.getByTestId('zoom-level');
+  for (let attempt = 0; attempt < 16; attempt += 1) {
+    const current = await zoomLabel.textContent();
+    if (current === targetLabel) return;
+    const currentValue = Number.parseInt(current?.replace('%', '') ?? '100', 10);
+    const targetValue = Number.parseInt(targetLabel.replace('%', ''), 10);
+    if (currentValue < targetValue) {
+      await bottomBar.getByTestId('zoom-in').click();
+    } else {
+      await bottomBar.getByTestId('zoom-out').click();
+    }
+  }
+}
+
+export async function setReaderLayout(
+  page: Page,
+  options: {
+    view?: 'single' | 'double' | 'continuous';
+    fit?: 'width' | 'screen';
+    zoom?: string;
+  },
+): Promise<void> {
+  const bottomBar = page.getByTestId('reader-bottom-bar');
+  if (options.view) {
+    await bottomBar.getByTestId(`view-mode-${options.view}`).click();
+  }
+  if (options.fit) {
+    await bottomBar.getByTestId(`fit-mode-${options.fit}`).click();
+  }
+  if (options.zoom) {
+    await setZoomLevel(page, options.zoom);
+  }
+  await page.waitForTimeout(250);
+}

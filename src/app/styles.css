@@ -376,6 +376,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 0;
 }
 .page-slot--inline {
   position: relative;
@@ -392,12 +393,19 @@ body {
   justify-content: center;
   scroll-snap-align: start;
   scroll-snap-stop: always;
+  overflow: hidden;
+}
+.reader-slot--single,
+.reader-slot--double {
+  isolation: isolate;
 }
 .reader-spread {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   gap: 16px;
+  max-height: 100%;
+  flex-shrink: 0;
 }
 .reader-spread__blank {
   flex-shrink: 0;
@@ -509,8 +517,10 @@ body {
   position: relative;
   background: white;
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(15, 23, 42, 0.14);
   border-radius: 2px;
   overflow: hidden;
+  flex-shrink: 0;
 }
 .page-canvas {
   position: relative;
@@ -536,6 +546,11 @@ body {
   z-index: 1;
   overflow: auto;
   background: transparent;
+  overscroll-behavior: contain;
+}
+.epub-text-layer--paginated {
+  overflow: hidden;
+  overscroll-behavior: none;
 }
 .epub-chapter {
   position: relative;

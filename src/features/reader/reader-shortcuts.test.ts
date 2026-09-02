@@ -9,6 +9,7 @@ import {
 const baseState: ReaderShortcutState = {
   currentPage: 5,
   pageCount: 100,
+  viewMode: 'continuous',
   activePanel: null,
   hasSelection: false,
 };
@@ -99,6 +100,13 @@ describe('pageForShortcut', () => {
     ).toBe(100);
     expect(pageForShortcut({ type: 'first-page' }, baseState)).toBe(1);
     expect(pageForShortcut({ type: 'last-page' }, baseState)).toBe(100);
+  });
+
+  it('steps by spread in double view', () => {
+    const doubleState = { ...baseState, viewMode: 'double' as const, pageCount: 24 };
+    expect(pageForShortcut({ type: 'next-page' }, { ...doubleState, currentPage: 1 })).toBe(3);
+    expect(pageForShortcut({ type: 'previous-page' }, { ...doubleState, currentPage: 3 })).toBe(1);
+    expect(pageForShortcut({ type: 'last-page' }, doubleState)).toBe(23);
   });
 });
 
