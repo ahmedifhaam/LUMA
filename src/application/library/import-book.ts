@@ -1,4 +1,5 @@
 import type { Book } from '@/domain/book/types';
+import { defaultLocalSourceRef } from '@/domain/book/source';
 import type { DocumentEngine } from '@/domain/document/types';
 import {
   detectDocumentFormat,
@@ -46,6 +47,8 @@ export async function importBook(
       const updated: Book = {
         ...existing,
         sourceName: source.name,
+        source: existing.source ?? 'local',
+        sourceRef: defaultLocalSourceRef(source.name),
         lastOpenedAt: Date.now(),
       };
       await bookRepository.save(updated);
@@ -64,6 +67,8 @@ export async function importBook(
       hasText: doc.metadata.hasText,
       format,
       sourceName: source.name,
+      source: 'local',
+      sourceRef: defaultLocalSourceRef(source.name),
       createdAt: now,
       lastOpenedAt: null,
       coverThumbnail,

@@ -44,6 +44,7 @@ This allows the product to support large local files, offline use, privacy, and 
 - Cloud book storage is a future capability rather than an initial requirement.
 - Synchronization should focus on user state before requiring synchronization of large document content.
 - Users may eventually choose local-only, synchronized-state, or cloud-backed content models.
+- Continuity is primarily offered through cloud-backed book sources ([[Decision - Continuity via Cloud-Backed Sources]]).
 
 ## Related Capabilities
 

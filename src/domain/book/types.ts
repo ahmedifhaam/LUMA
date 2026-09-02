@@ -1,6 +1,9 @@
 import type { DocumentLocation } from '@/domain/document/types';
+import type { BookSourceKind, BookSourceRef } from '@/domain/book/source';
 
 export type BookFormat = 'pdf' | 'epub';
+
+export type { BookSourceKind, BookSourceRef };
 
 /**
  * A logical book. Identity is the document content fingerprint, so re-importing
@@ -19,6 +22,10 @@ export interface Book {
   format?: BookFormat;
   /** Most recent filename this content was imported under (informational only). */
   sourceName: string;
+  /** Where the book bytes live. Defaults to `local` for books imported before Phase 1.5. */
+  source?: BookSourceKind;
+  /** Source-specific reference (filename, remote id, plugin id). */
+  sourceRef?: BookSourceRef;
   createdAt: number;
   lastOpenedAt: number | null;
   /** JPEG data URL for library cover display, when available at import. */
@@ -26,11 +33,17 @@ export interface Book {
 }
 
 export interface ReadingState {
+  /** Composite key: `${bookId}::${deviceId}`. */
+  id: string;
   /** Book id / fingerprint. */
   bookId: string;
+  /** Stable id for this browser installation. */
+  deviceId: string;
   location: DocumentLocation;
   /** Fraction read in [0,1]. */
   progress: number;
+  /** When this device last opened the book. */
+  lastOpenedAt: number;
   updatedAt: number;
 }
 

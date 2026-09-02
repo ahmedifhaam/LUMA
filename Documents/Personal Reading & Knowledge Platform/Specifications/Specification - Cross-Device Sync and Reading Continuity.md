@@ -16,10 +16,12 @@ This document captures the behaviour established during product exploration. It 
 ### Established Direction
 
 - Each device can maintain its own local reading state.
-- A future backend can exchange relevant reading state between devices.
+- A future backend can exchange relevant reading state between devices **for cloud-backed book sources**.
 - Synchronization is an extension of local reading, not a prerequisite for reading.
-- The user should be able to stop reading on one device and continue on another.
-- The user's books do not have to be uploaded merely to enable state synchronization.
+- The user should be able to stop reading on one device and continue on another **when using a synchronized cloud source**.
+- **Primary path (revised 2026-09-02):** continuity is bundled with cloud-backed book sources. See [[Decision - Continuity via Cloud-Backed Sources]].
+- **Alternate path (deferred):** state-only synchronization for users who import the same file locally on each device without cloud storage.
+- Logged-out users receive the full local Phase 1 experience with no sync.
 
 ### Deferred / Not Yet Decided
 
@@ -44,17 +46,21 @@ Synchronization should allow independently made changes on multiple devices to e
 
 ### Reading Continuity
 
-When a user opens a book on another synchronized device, the application should be able to identify a recent reading position from another device and offer continuation from that location.
+When a user opens a **cloud-backed** book on another synchronized device, the application should be able to identify a recent reading position from another device and offer continuation from that location.
 
 The product should preserve reading activity history rather than treating a device's latest position as the only historical information.
+
+**Per-device tracks:** A user may maintain independent reading progress on different devices (e.g. reading from the beginning on one device and from the end on another). Cross-device continuation is offered as an explicit choice, not an automatic overwrite of device-local state.
 
 ## Product Rules
 
 1. Synchronization must not make local reading dependent on the backend.
 2. Local changes must be retained when offline and remain available until synchronization is possible.
-3. A book's content does not need to be transferred merely to synchronize reading state.
-4. Cross-device continuation should use the user's logical book identity and a format-appropriate reading location.
-5. Synchronization must account for changes made independently on multiple devices.
+3. **Cloud-backed books:** content and reading state sync through the user's account and chosen source.
+4. **Local-only books:** no network required; no upload implied; per-device state only unless a future state-only sync mode is added.
+5. Cross-device continuation should use the user's logical book identity and a format-appropriate reading location.
+6. Synchronization must account for changes made independently on multiple devices.
+7. Authentication is required only for cloud and sync features; logged-out users are unaffected.
 
 ## Current Acceptance Boundary
 
@@ -89,3 +95,5 @@ The following are established product outcomes but are not yet sufficient for im
 ## Specification Gate
 
 Do not promote this document to `Specified` until the major synchronization and convergence questions above have deliberate product decisions.
+
+**Alignment note (2026-09-02):** Primary continuity model is now defined in [[Decision - Continuity via Cloud-Backed Sources]] and [[Phase 2 - Synchronization and Continuity]]. Remaining open items: conflict rules, annotation merge, and connector implementation details.

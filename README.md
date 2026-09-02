@@ -46,6 +46,7 @@ npm run dev      # start the dev server at http://localhost:5173
 | `npm run test`         | Run unit tests (Vitest) once.                       |
 | `npm run test:watch`   | Run unit tests in watch mode.                       |
 | `npm run test:e2e`     | Run Playwright end-to-end tests (see note).         |
+| `npm run test:feature-guide` | Capture screenshots + video for the [v1 feature guide](./docs/LUMA-v1-Feature-Guide.md). |
 
 > **Playwright browsers:** `npm run test:e2e` requires browsers once per machine:
 > `npx playwright install chromium`. The dev server is started automatically by
@@ -63,6 +64,8 @@ npm run dev      # start the dev server at http://localhost:5173
 - Reading position is persisted (debounced) and restored on reopen.
 - Image-only / scanned PDFs are detected and show the required red warning banner.
 - Installable PWA app shell for offline use.
+
+See the **[LUMA v1.0 Feature Guide](./docs/LUMA-v1-Feature-Guide.md)** for a screenshot- and video-backed tour of every capability.
 
 The document engine (PDF.js), file source, and persistence are each behind
 adapters, per the Phase 1 architecture rules. Remaining Phase 1 capabilities

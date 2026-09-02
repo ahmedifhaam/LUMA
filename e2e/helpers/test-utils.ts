@@ -3,6 +3,8 @@ import type { Page } from '@playwright/test';
 
 export const FIXTURES = join(process.cwd(), 'e2e', 'fixtures');
 export const SCREENSHOTS = join(process.cwd(), 'e2e', 'artifacts', 'screenshots');
+export const FEATURE_GUIDE_DIR = join(process.cwd(), 'docs', 'assets', 'feature-guide');
+export const FEATURE_GUIDE_SCREENSHOTS = join(FEATURE_GUIDE_DIR, 'screenshots');
 
 export const FIXTURE_FILES = {
   samplePdf: join(FIXTURES, 'sample-book.pdf'),
@@ -10,6 +12,22 @@ export const FIXTURE_FILES = {
   tocPdf: join(FIXTURES, 'toc-book.pdf'),
   sampleEpub: join(FIXTURES, 'sample-book.epub'),
 } as const;
+
+/** Capture a screenshot for the v1 feature guide documentation. */
+export async function captureGuideStep(
+  page: Page,
+  name: string,
+  options?: { viewport?: boolean },
+): Promise<void> {
+  const { mkdirSync } = await import('node:fs');
+  mkdirSync(FEATURE_GUIDE_SCREENSHOTS, { recursive: true });
+  const path = join(FEATURE_GUIDE_SCREENSHOTS, `${name}.png`);
+  if (options?.viewport) {
+    await page.locator('[data-reader-viewport]').screenshot({ path });
+    return;
+  }
+  await page.screenshot({ path, fullPage: true });
+}
 
 /** Capture a named screenshot for feature documentation. */
 export async function captureStep(page: Page, name: string): Promise<void> {
@@ -25,6 +43,12 @@ export async function importBook(page: Page, filePath: string): Promise<void> {
   await page.getByRole('button', { name: 'Open', exact: true }).first().waitFor({
     timeout: 30_000,
   });
+}
+
+export async function openBookByTitle(page: Page, titlePart: string): Promise<void> {
+  const card = page.locator('.book-card', { has: page.getByText(titlePart, { exact: false }) });
+  await card.getByRole('button', { name: 'Open', exact: true }).click();
+  await page.locator('[data-testid="page-1"]').waitFor({ timeout: 30_000 });
 }
 
 export async function openFirstBook(page: Page): Promise<void> {

@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { ReadingState } from '@/domain/book/types';
+import type { Book, ReadingState } from '@/domain/book/types';
+import { normalizeBookSource } from '@/domain/book/source';
 import { useLibraryStore } from '@/application/library/library-store';
 import { IMPORT_FILE_ACCEPT } from '@/infrastructure/document-source/file-source';
 import { readingStateRepository } from '@/infrastructure/persistence/repositories';
+import { BookSourceIcon } from './BookSourceIcon';
 
 const IMPORT_INPUT_ID = 'library-import-input';
 
@@ -40,7 +42,7 @@ export function LibraryView({ onOpenBook, onOpenShortcuts }: LibraryViewProps) {
   }, [loadLibrary]);
 
   useEffect(() => {
-    void readingStateRepository.list().then((states) => {
+    void readingStateRepository.listForDevice().then((states) => {
       const map: Record<string, ReadingState> = {};
       for (const state of states) map[state.bookId] = state;
       setProgressMap(map);
@@ -48,8 +50,16 @@ export function LibraryView({ onOpenBook, onOpenShortcuts }: LibraryViewProps) {
   }, [books]);
 
   const continueReading = useMemo(() => {
-    return books.find((book) => book.lastOpenedAt !== null) ?? null;
-  }, [books]);
+    let best: { book: Book; state: ReadingState } | null = null;
+    for (const book of books) {
+      const state = progressMap[book.id];
+      if (!state) continue;
+      if (!best || state.lastOpenedAt > best.state.lastOpenedAt) {
+        best = { book, state };
+      }
+    }
+    return best?.book ?? null;
+  }, [books, progressMap]);
 
   async function handleFiles(fileList: FileList | null) {
     if (!fileList || fileList.length === 0) return;
@@ -151,13 +161,16 @@ export function LibraryView({ onOpenBook, onOpenShortcuts }: LibraryViewProps) {
           </div>
         ) : (
           <ul className="book-grid">
-            {books.map((book) => (
+            {books.map((book) => {
+              const { source } = normalizeBookSource(book);
+              return (
               <li key={book.id} className="book-card">
                 <button
                   className="book-card__cover"
                   onClick={() => onOpenBook(book.id)}
                   aria-label={`Open ${book.title}`}
                 >
+                  <BookSourceIcon source={source} className="book-card__source" />
                   {book.coverThumbnail ? (
                     <img
                       className="book-card__image"
@@ -197,7 +210,8 @@ export function LibraryView({ onOpenBook, onOpenShortcuts }: LibraryViewProps) {
                   </div>
                 </div>
               </li>
-            ))}
+            );
+            })}
           </ul>
         )}
       </section>
