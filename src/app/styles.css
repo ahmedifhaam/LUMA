@@ -541,6 +541,9 @@ body {
   position: relative;
   font-family: Georgia, 'Times New Roman', serif;
 }
+.epub-chapter-body {
+  position: relative;
+}
 .epub-highlights {
   position: absolute;
   inset: 0;

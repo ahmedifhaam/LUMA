@@ -1,10 +1,12 @@
-import type { NormalizedRect } from '@/domain/book/types';
+import type { NormalizedRect, TextAnchor } from '@/domain/book/types';
+import { textAnchorFromRange } from './epub-text-anchor';
 
 export interface SelectionHighlight {
   pageNumber: number;
   yOffset: number;
   quote: string;
   rects: NormalizedRect[];
+  textAnchor?: TextAnchor;
   /** Anchor point (viewport client coords) for a selection popover. */
   anchorX: number;
   anchorY: number;
@@ -38,10 +40,11 @@ export function measureContextForSlot(slot: HTMLElement): SelectionMeasureContex
   const layer = slot.querySelector('.epub-text-layer') as HTMLElement | null;
 
   if (chapter && layer) {
+    const content = chapter.querySelector('.epub-chapter-body') ?? chapter;
     const layerRect = layer.getBoundingClientRect();
     return {
       kind: 'epub',
-      width: chapter.scrollWidth,
+      width: content.scrollWidth,
       height: chapter.scrollHeight,
       scrollLeft: layer.scrollLeft,
       scrollTop: layer.scrollTop,
@@ -107,12 +110,17 @@ export function getSelectionHighlight(root: HTMLElement): SelectionHighlight | n
   const rects = rectsFromRange(context, clientRects);
   if (rects.length === 0) return null;
 
+  const chapter = slot.querySelector('.epub-chapter') as HTMLElement | null;
+  const textAnchor =
+    chapter && context.kind === 'epub' ? textAnchorFromRange(chapter, range) : undefined;
+
   const last = clientRects[clientRects.length - 1];
   return {
     pageNumber: Number(slot.dataset.page),
     yOffset: rects[0].top,
     quote,
     rects,
+    textAnchor: textAnchor ?? undefined,
     anchorX: last ? last.right : slotRect.left,
     anchorY: last ? last.bottom : slotRect.top,
   };

@@ -306,6 +306,7 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
       location: { pageNumber: selection.pageNumber, yOffset: selection.yOffset },
       quote: selection.quote,
       rects: selection.rects,
+      textAnchor: selection.textAnchor,
     });
     window.getSelection()?.removeAllRanges();
     setSelection(null);

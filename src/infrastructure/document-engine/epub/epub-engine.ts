@@ -131,7 +131,11 @@ class EpubDocument implements OpenDocument {
       wrapper.style.color = textColor;
       wrapper.style.fontSize = `${EPUB_BASE_FONT_PX * textScale * scale}px`;
       wrapper.style.lineHeight = '1.6';
-      wrapper.innerHTML = html;
+
+      const body = document.createElement('div');
+      body.className = 'epub-chapter-body';
+      body.innerHTML = html;
+      wrapper.appendChild(body);
       container.appendChild(wrapper);
     })();
 
