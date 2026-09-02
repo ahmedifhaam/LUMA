@@ -11,6 +11,8 @@ interface PageCanvasProps {
   height: number;
   top?: number;
   inline?: boolean;
+  pageBackground: string;
+  displayRevision: number;
   highlights: Annotation[];
 }
 
@@ -30,6 +32,8 @@ export function PageCanvas({
   height,
   top,
   inline = false,
+  pageBackground,
+  displayRevision,
   highlights,
 }: PageCanvasProps) {
   const canvasHostRef = useRef<HTMLDivElement>(null);
@@ -70,7 +74,7 @@ export function PageCanvas({
       canvasHost.querySelector('canvas')?.remove();
       textLayer.replaceChildren();
     };
-  }, [doc, pageNumber, scale]);
+  }, [doc, pageNumber, scale, pageBackground, displayRevision]);
 
   return (
     <div
@@ -79,7 +83,10 @@ export function PageCanvas({
       data-page={pageNumber}
       data-testid={`page-${pageNumber}`}
     >
-      <div className="page-canvas-host" style={{ width, height }}>
+      <div
+        className="page-canvas-host"
+        style={{ width, height, backgroundColor: pageBackground }}
+      >
         <div ref={canvasHostRef} className="page-canvas" style={{ width, height }} />
         <div ref={textLayerRef} className="textLayer" />
         <div className="page-highlights">

@@ -42,6 +42,14 @@ test.describe('reader navigation', () => {
     await bottomBar.getByTestId('fit-mode-screen').click();
     await captureStep(page, 'reader-layout-bottom-bar');
   });
+
+  test('adjusts zoom and theme from the bottom bar', async ({ page }) => {
+    const bottomBar = page.getByTestId('reader-bottom-bar');
+    await bottomBar.getByTestId('zoom-in').click();
+    await expect(bottomBar.getByTestId('zoom-level')).toHaveText('110%');
+    await bottomBar.getByTestId('theme-sepia').click();
+    await captureStep(page, 'reader-display-controls');
+  });
 });
 
 test.describe('reader keyboard shortcuts', () => {

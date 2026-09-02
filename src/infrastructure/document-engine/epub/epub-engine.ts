@@ -21,6 +21,23 @@ import {
   type ParsedEpub,
 } from './epub-parser';
 
+const EPUB_BASE_FONT_PX = 16;
+
+function readThemeVars(container: HTMLElement): {
+  pageBackground: string;
+  textColor: string;
+  textScale: number;
+} {
+  const root = container.closest('[data-reader-viewport]');
+  const styles = getComputedStyle(root ?? container);
+  const textScale = Number.parseFloat(styles.getPropertyValue('--reader-text-scale'));
+  return {
+    pageBackground: styles.getPropertyValue('--reader-page-bg').trim() || '#ffffff',
+    textColor: styles.getPropertyValue('--reader-text-color').trim() || '#111827',
+    textScale: Number.isFinite(textScale) ? textScale : 1,
+  };
+}
+
 class EpubDocument implements OpenDocument {
   readonly identity: DocumentIdentity;
   readonly metadata: DocumentMetadata;
@@ -98,6 +115,8 @@ class EpubDocument implements OpenDocument {
       const html = await this.#chapterHtml(pageNumber);
       if (cancelled) return;
 
+      const { pageBackground, textColor, textScale } = readThemeVars(container);
+
       container.replaceChildren();
       container.classList.add('epub-text-layer');
       container.style.setProperty('--scale-factor', String(scale));
@@ -108,7 +127,9 @@ class EpubDocument implements OpenDocument {
       wrapper.style.minHeight = `${EPUB_PAGE_HEIGHT * scale}px`;
       wrapper.style.padding = `${24 * scale}px`;
       wrapper.style.boxSizing = 'border-box';
-      wrapper.style.color = '#111827';
+      wrapper.style.background = pageBackground;
+      wrapper.style.color = textColor;
+      wrapper.style.fontSize = `${EPUB_BASE_FONT_PX * textScale * scale}px`;
       wrapper.style.lineHeight = '1.6';
       wrapper.innerHTML = html;
       container.appendChild(wrapper);

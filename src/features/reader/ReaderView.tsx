@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { Annotation } from '@/domain/book/types';
 import type { PageGeometry } from '@/domain/document/types';
 import { useReaderStore } from '@/application/reader/reader-store';
@@ -13,7 +13,20 @@ import { NotesPanel } from './panels/NotesPanel';
 import { useReaderShortcuts } from './useReaderShortcuts';
 import { isEditableTarget } from './reader-shortcuts';
 import { ReaderBottomBar } from './ReaderBottomBar';
+import { ReaderDisplayControls } from './ReaderDisplayControls';
 import { ReaderLayoutControls } from './ReaderLayoutControls';
+import {
+  applyZoomMultiplier,
+  clampIndex,
+  loadStoredDisplayPrefs,
+  storeDisplayPrefs,
+  supportsTextSizing,
+  textSizeMultiplier,
+  themeById,
+  type ReaderThemeId,
+  ZOOM_STEPS,
+  TEXT_SIZE_STEPS,
+} from './reader-display';
 import {
   computePageScale,
   loadStoredFitMode,
@@ -64,6 +77,8 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
   const [containerHeight, setContainerHeight] = useState(0);
   const [viewMode, setViewMode] = useState<ViewMode>(() => loadStoredViewMode());
   const [fitMode, setFitMode] = useState<PageFitMode>(() => loadStoredFitMode());
+  const [displayPrefs, setDisplayPrefs] = useState(() => loadStoredDisplayPrefs());
+  const [displayRevision, setDisplayRevision] = useState(0);
   const [currentPage, setCurrentPage] = useState(location.pageNumber);
   const [pageInput, setPageInput] = useState(String(location.pageNumber));
   const [activePanel, setActivePanel] = useState<PanelId | null>(null);
@@ -90,7 +105,7 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
     return () => observer.disconnect();
   }, [status, activePanel, viewMode]);
 
-  const scale = useMemo(() => {
+  const fitScale = useMemo(() => {
     if (!base || containerWidth === 0) return 1;
     return computePageScale(
       base,
@@ -100,6 +115,28 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
       viewMode,
     );
   }, [base, containerWidth, containerHeight, fitMode, viewMode]);
+
+  const scale = useMemo(
+    () => applyZoomMultiplier(fitScale, displayPrefs.zoomIndex),
+    [fitScale, displayPrefs.zoomIndex],
+  );
+
+  const theme = useMemo(() => themeById(displayPrefs.themeId), [displayPrefs.themeId]);
+  const textScale = textSizeMultiplier(displayPrefs.textSizeIndex);
+  const textSizingEnabled = supportsTextSizing(book?.format);
+  const pageBackground =
+    book?.format === 'epub' ? theme.pageBackground : '#ffffff';
+
+  const viewportStyle = useMemo(
+    () =>
+      ({
+        backgroundColor: theme.viewportBackground,
+        '--reader-page-bg': theme.pageBackground,
+        '--reader-text-color': theme.textColor,
+        '--reader-text-scale': String(textScale),
+      }) as CSSProperties,
+    [theme, textScale],
+  );
 
   const pageWidth = base ? base.width * scale : 0;
   const pageHeight = base ? base.height * scale : 0;
@@ -176,7 +213,7 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
     if (!layoutChangeRef.current || slotHeight <= 0) return;
     layoutChangeRef.current = false;
     goToPage(currentPage);
-  }, [viewMode, fitMode, slotHeight, goToPage, currentPage]);
+  }, [viewMode, fitMode, displayPrefs, slotHeight, goToPage, currentPage]);
 
   const handleViewModeChange = useCallback((mode: ViewMode) => {
     layoutChangeRef.current = true;
@@ -189,6 +226,40 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
     storeFitMode(mode);
     setFitMode(mode);
   }, []);
+
+  const persistDisplay = useCallback((next: typeof displayPrefs) => {
+    layoutChangeRef.current = true;
+    storeDisplayPrefs(next);
+    setDisplayPrefs(next);
+    setDisplayRevision((value) => value + 1);
+  }, []);
+
+  const handleZoomIndexChange = useCallback(
+    (index: number) => {
+      persistDisplay({
+        ...displayPrefs,
+        zoomIndex: clampIndex(index, ZOOM_STEPS.length),
+      });
+    },
+    [displayPrefs, persistDisplay],
+  );
+
+  const handleTextSizeIndexChange = useCallback(
+    (index: number) => {
+      persistDisplay({
+        ...displayPrefs,
+        textSizeIndex: clampIndex(index, TEXT_SIZE_STEPS.length),
+      });
+    },
+    [displayPrefs, persistDisplay],
+  );
+
+  const handleThemeChange = useCallback(
+    (themeId: ReaderThemeId) => {
+      persistDisplay({ ...displayPrefs, themeId });
+    },
+    [displayPrefs, persistDisplay],
+  );
 
   const handleScroll = useCallback(() => {
     const el = scrollRef.current;
@@ -367,6 +438,15 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
         </div>
 
         <div className="reader__toolbar-layout" data-testid="reader-toolbar-layout">
+          <ReaderDisplayControls
+            zoomIndex={displayPrefs.zoomIndex}
+            textSizeIndex={displayPrefs.textSizeIndex}
+            themeId={displayPrefs.themeId}
+            textSizingEnabled={textSizingEnabled}
+            onZoomIndexChange={handleZoomIndexChange}
+            onTextSizeIndexChange={handleTextSizeIndexChange}
+            onThemeChange={handleThemeChange}
+          />
           <ReaderLayoutControls
             fitMode={fitMode}
             viewMode={viewMode}
@@ -419,6 +499,8 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
       <div className="reader__body">
         <div
           className={viewportClassName}
+          data-reader-viewport
+          style={viewportStyle}
           ref={scrollRef}
           onScroll={handleScroll}
           onMouseUp={handlePointerUp}
@@ -435,6 +517,8 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
                     width={pageWidth}
                     height={pageHeight}
                     top={layoutOffsetForPageNumber(page)}
+                    pageBackground={pageBackground}
+                    displayRevision={displayRevision}
                     highlights={highlightsByPage.get(page) ?? []}
                   />
                 ))}
@@ -456,6 +540,8 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
                       width={pageWidth}
                       height={pageHeight}
                       inline
+                      pageBackground={pageBackground}
+                      displayRevision={displayRevision}
                       highlights={highlightsByPage.get(page) ?? []}
                     />
                   </div>
@@ -476,6 +562,8 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
                         width={pageWidth}
                         height={pageHeight}
                         inline
+                        pageBackground={pageBackground}
+                        displayRevision={displayRevision}
                         highlights={highlightsByPage.get(spread.leftPage) ?? []}
                       />
                       {spread.rightPage ? (
@@ -486,12 +574,18 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
                           width={pageWidth}
                           height={pageHeight}
                           inline
+                          pageBackground={pageBackground}
+                          displayRevision={displayRevision}
                           highlights={highlightsByPage.get(spread.rightPage) ?? []}
                         />
                       ) : (
                         <div
                           className="reader-spread__blank"
-                          style={{ width: pageWidth, height: pageHeight }}
+                          style={{
+                            width: pageWidth,
+                            height: pageHeight,
+                            backgroundColor: pageBackground,
+                          }}
                           aria-hidden
                         />
                       )}
@@ -537,8 +631,15 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
       <ReaderBottomBar
         fitMode={fitMode}
         viewMode={viewMode}
+        zoomIndex={displayPrefs.zoomIndex}
+        textSizeIndex={displayPrefs.textSizeIndex}
+        themeId={displayPrefs.themeId}
+        textSizingEnabled={textSizingEnabled}
         onFitModeChange={handleFitModeChange}
         onViewModeChange={handleViewModeChange}
+        onZoomIndexChange={handleZoomIndexChange}
+        onTextSizeIndexChange={handleTextSizeIndexChange}
+        onThemeChange={handleThemeChange}
       />
 
       {selection && (
