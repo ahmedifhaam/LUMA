@@ -25,6 +25,10 @@ export interface ReadingStatePush {
 export interface SyncStateService {
   pushReadingState(bookId: string, state: ReadingStatePush): Promise<void>;
   pullReadingState(bookId: string): Promise<DeviceSession[]>;
-  getContinuationOffer(bookId: string, currentDeviceId: string): Promise<ContinuationOffer>;
+  getContinuationOffer(
+    bookId: string,
+    currentDeviceId: string,
+    currentLocation: ReadingLocationEnvelope,
+  ): Promise<ContinuationOffer>;
   syncNow(): Promise<void>;
 }

@@ -21,7 +21,12 @@ describe('LocalSyncStub', () => {
   });
 
   it('getContinuationOffer returns null', async () => {
-    await expect(sync.getContinuationOffer('book-1', 'device-1')).resolves.toBeNull();
+    await expect(
+      sync.getContinuationOffer('book-1', 'device-1', {
+        format: 'pdf',
+        locator: { pageNumber: 1, yOffset: 0 },
+      }),
+    ).resolves.toBeNull();
   });
 
   it('syncNow is a no-op', async () => {

@@ -90,6 +90,7 @@ test.describe('LUMA v1 feature guide', () => {
 
     // Keyboard shortcuts help
     await page.getByRole('button', { name: 'Close panel' }).click();
+    await page.getByTestId('app-menu-trigger').click();
     await page.getByTestId('open-shortcuts').click();
     await captureGuideStep(page, '16-keyboard-shortcuts-help');
 
