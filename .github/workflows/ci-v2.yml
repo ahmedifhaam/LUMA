@@ -1,0 +1,92 @@
+name: CI (v2)
+
+on:
+  push:
+    branches: [v2]
+  pull_request:
+    branches: [v2]
+
+concurrency:
+  group: ci-v2-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
+  phase2-e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Start API stack
+        run: docker compose up -d --wait
+      - name: Run Phase 2 Playwright tests
+        run: npm run test:e2e:phase2
+        env:
+          CI: true
+          PHASE2_DOCKER: 'false'
+          PHASE2_SKIP_DOCKER: 'true'
+          VITE_CLOUD_ENABLED: 'true'
+          VITE_API_BASE_URL: http://localhost:3000
+      - name: Collect PR videos
+        if: always()
+        run: |
+          mkdir -p e2e/artifacts/pr-videos
+          find e2e/artifacts/test-results -name '*.webm' -exec cp {} e2e/artifacts/pr-videos/ \; 2>/dev/null || true
+          find e2e/artifacts/pr-videos -name '*.webm' | sort
+      - name: Upload E2E videos
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase2-e2e-videos
+          path: e2e/artifacts/pr-videos/
+          if-no-files-found: ignore
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase2-playwright-report
+          path: e2e/artifacts/report/
+          if-no-files-found: ignore
+      - name: Comment PR with recording links
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const runUrl = `${context.payload.repository.html_url}/actions/runs/${context.runId}`;
+            const body = [
+              '## Phase 2 E2E recordings',
+              '',
+              `Workflow run: ${runUrl}`,
+              '',
+              'Download **phase2-e2e-videos** from the workflow artifacts to review screen recordings.',
+              '',
+              'Named captures (when tests pass):',
+              '- `phase2-cloud-auth.webm`',
+              '- `phase2-cross-device-sync-a.webm`',
+              '- `phase2-cross-device-sync-b.webm`',
+            ].join('\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });
+      - name: Stop API stack
+        if: always()
+        run: docker compose down -v

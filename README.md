@@ -47,10 +47,42 @@ npm run dev      # start the dev server at http://localhost:5173
 | `npm run test:watch`   | Run unit tests in watch mode.                       |
 | `npm run test:e2e`     | Run Playwright end-to-end tests (see note).         |
 | `npm run test:feature-guide` | Capture screenshots + video for the [v1 feature guide](./docs/LUMA-v1-Feature-Guide.md). |
+| `npm run test:e2e:phase2` | Phase 2 e2e (starts Docker Compose API stack, screen recordings). |
+| `npm run docker:up`    | Start local Postgres + LUMA API (`docker compose up -d --wait`). |
+| `npm run docker:down`  | Stop the local API stack.                           |
+| `npm run dev:cloud`    | Vite dev server with Phase 2 cloud features enabled. |
 
 > **Playwright browsers:** `npm run test:e2e` requires browsers once per machine:
 > `npx playwright install chromium`. The dev server is started automatically by
 > the Playwright config.
+
+## Phase 2 local stack (v2 branch)
+
+Phase 2 adds an optional API for auth and reading-state sync. The free local
+reader still works without it.
+
+**Requirements:** Docker (for Postgres + API).
+
+```bash
+cp .env.example .env.local   # optional reference
+npm run docker:up            # Postgres :5432, API :3000
+npm run dev:cloud            # Vite with cloud features at :5173
+```
+
+Seeded dev account (when `SEED_TEST_USER=true` in compose): **`testuser` / `testpass`**
+
+```bash
+npm run test:e2e:phase2      # Playwright + screen recordings
+```
+
+Recordings are saved to `e2e/artifacts/pr-videos/`. On PRs to `v2`, CI uploads
+them as workflow artifacts and posts a comment with download links.
+
+| Service  | URL |
+| -------- | --- |
+| Frontend | http://localhost:5173 |
+| API      | http://localhost:3000 |
+| Postgres | localhost:5432 (`luma` / `luma`) |
 
 ## What works today (Phase 1 vertical slice)
 

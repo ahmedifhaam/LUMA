@@ -1,4 +1,5 @@
 import { features } from '@/config/features';
+import { HttpSyncStateService } from './http-client';
 import { LocalSyncStub } from './local-stub';
 import type { SyncStateService } from './types';
 
@@ -6,8 +7,7 @@ function createSyncStateService(): SyncStateService {
   if (!features.cloudEnabled) {
     return new LocalSyncStub();
   }
-  // Future: return remote sync implementation when cloud is enabled.
-  return new LocalSyncStub();
+  return new HttpSyncStateService();
 }
 
 export const syncStateService: SyncStateService = createSyncStateService();

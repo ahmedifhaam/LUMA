@@ -1,0 +1,45 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: luma
+      POSTGRES_PASSWORD: luma
+      POSTGRES_DB: luma
+    ports:
+      - '5432:5432'
+    volumes:
+      - luma_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U luma -d luma']
+      interval: 3s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./server
+    ports:
+      - '3000:3000'
+    environment:
+      DATABASE_URL: postgres://luma:luma@postgres:5432/luma
+      JWT_SECRET: dev-secret-change-in-prod
+      CORS_ORIGIN: http://localhost:5173
+      SEED_TEST_USER: 'true'
+      PORT: '3000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  luma_pg_data:

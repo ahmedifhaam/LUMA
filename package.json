@@ -20,7 +20,11 @@
     "test:e2e": "playwright test",
     "test:e2e:tour": "playwright test --project=feature-tour",
     "test:feature-guide": "playwright test --project=feature-guide",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "docker:up": "docker compose up -d --wait",
+    "docker:down": "docker compose down",
+    "dev:cloud": "VITE_CLOUD_ENABLED=true VITE_API_BASE_URL=http://localhost:3000 npm run dev",
+    "test:e2e:phase2": "PHASE2_DOCKER=true VITE_CLOUD_ENABLED=true VITE_API_BASE_URL=http://localhost:3000 playwright test --project=phase2"
   },
   "dependencies": {
     "jszip": "^3.10.1",

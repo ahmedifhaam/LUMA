@@ -53,11 +53,27 @@ export default defineConfig({
         viewport: { width: 1280, height: 800 },
       },
     },
+    {
+      name: 'phase2',
+      testMatch: /phase2\/.*\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        channel: 'chrome',
+        video: 'on',
+        screenshot: 'on',
+        trace: 'on',
+        viewport: { width: 1280, height: 800 },
+      },
+    },
   ],
   webServer: {
     command: 'npm run dev',
     url: 'http://localhost:5173',
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
+    env: {
+      VITE_CLOUD_ENABLED: process.env.VITE_CLOUD_ENABLED ?? 'false',
+      VITE_API_BASE_URL: process.env.VITE_API_BASE_URL ?? 'http://localhost:3000',
+    },
   },
 });
