@@ -33,12 +33,13 @@ test.describe('reader navigation', () => {
   });
 
   test('switches layout modes from the bottom bar', async ({ page }) => {
-    await expect(page.getByLabel('Reading layout controls')).toBeVisible();
-    await page.getByTestId('view-mode-single').click();
+    const bottomBar = page.getByTestId('reader-bottom-bar');
+    await expect(bottomBar).toBeVisible();
+    await bottomBar.getByTestId('view-mode-single').click();
     await expect(page.locator('.reader__viewport--paginated')).toBeVisible();
-    await page.getByTestId('view-mode-double').click();
+    await bottomBar.getByTestId('view-mode-double').click();
     await expect(page.locator('.reader-slot--double').first()).toBeVisible();
-    await page.getByRole('button', { name: 'Fit screen' }).click();
+    await bottomBar.getByRole('button', { name: 'Fit screen' }).click();
     await captureStep(page, 'reader-layout-bottom-bar');
   });
 });

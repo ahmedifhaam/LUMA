@@ -13,6 +13,7 @@ import { NotesPanel } from './panels/NotesPanel';
 import { useReaderShortcuts } from './useReaderShortcuts';
 import { isEditableTarget } from './reader-shortcuts';
 import { ReaderBottomBar } from './ReaderBottomBar';
+import { ReaderLayoutControls } from './ReaderLayoutControls';
 import {
   computePageScale,
   loadStoredFitMode,
@@ -363,6 +364,16 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
           >
             ›
           </button>
+        </div>
+
+        <div className="reader__toolbar-layout" data-testid="reader-toolbar-layout">
+          <ReaderLayoutControls
+            fitMode={fitMode}
+            viewMode={viewMode}
+            onFitModeChange={handleFitModeChange}
+            onViewModeChange={handleViewModeChange}
+            compact
+          />
         </div>
 
         <div className="reader__panel-tabs">
