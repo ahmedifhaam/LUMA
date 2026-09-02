@@ -262,6 +262,7 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
   const handleScroll = useCallback(() => {
     const el = scrollRef.current;
     if (!el || !restoredRef.current) return;
+    window.getSelection()?.removeAllRanges();
     setSelection(null);
     onScroll(el.scrollTop, el.clientHeight);
     const page = layoutPageAtScroll(
@@ -499,7 +500,9 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
                     top={layoutOffsetForPageNumber(page)}
                     pageBackground={pageBackground}
                     displayRevision={displayRevision}
+                    bookFormat={book.format ?? 'pdf'}
                     highlights={highlightsByPage.get(page) ?? []}
+                    onClearSelection={clearSelection}
                   />
                 ))}
 
@@ -522,7 +525,9 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
                       inline
                       pageBackground={pageBackground}
                       displayRevision={displayRevision}
+                      bookFormat={book.format ?? 'pdf'}
                       highlights={highlightsByPage.get(page) ?? []}
+                      onClearSelection={clearSelection}
                     />
                   </div>
                 ))}
@@ -544,7 +549,9 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
                         inline
                         pageBackground={pageBackground}
                         displayRevision={displayRevision}
+                        bookFormat={book.format ?? 'pdf'}
                         highlights={highlightsByPage.get(spread.leftPage) ?? []}
+                        onClearSelection={clearSelection}
                       />
                       {spread.rightPage ? (
                         <PageCanvas
@@ -556,7 +563,9 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
                           inline
                           pageBackground={pageBackground}
                           displayRevision={displayRevision}
+                          bookFormat={book.format ?? 'pdf'}
                           highlights={highlightsByPage.get(spread.rightPage) ?? []}
+                          onClearSelection={clearSelection}
                         />
                       ) : (
                         <div

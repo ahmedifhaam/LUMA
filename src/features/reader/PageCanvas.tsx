@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import type { Annotation } from '@/domain/book/types';
+import type { Annotation, BookFormat } from '@/domain/book/types';
 import type { OpenDocument } from '@/domain/document/types';
 import { RenderCancelledError } from '@/infrastructure/document-engine/pdfjs/pdf-engine';
+import { clearEpubHighlights, syncEpubHighlights } from './highlight-rendering';
 
 interface PageCanvasProps {
   doc: OpenDocument;
@@ -13,7 +14,9 @@ interface PageCanvasProps {
   inline?: boolean;
   pageBackground: string;
   displayRevision: number;
+  bookFormat: BookFormat;
   highlights: Annotation[];
+  onClearSelection?: () => void;
 }
 
 /**
@@ -34,11 +37,14 @@ export function PageCanvas({
   inline = false,
   pageBackground,
   displayRevision,
+  bookFormat,
   highlights,
+  onClearSelection,
 }: PageCanvasProps) {
   const canvasHostRef = useRef<HTMLDivElement>(null);
   const textLayerRef = useRef<HTMLDivElement>(null);
   const [rendered, setRendered] = useState(false);
+  const isEpub = bookFormat === 'epub';
 
   useEffect(() => {
     const canvasHost = canvasHostRef.current;
@@ -72,9 +78,52 @@ export function PageCanvas({
       renderTask.cancel();
       textTask.cancel();
       canvasHost.querySelector('canvas')?.remove();
+      if (isEpub) clearEpubHighlights(textLayer);
       textLayer.replaceChildren();
     };
-  }, [doc, pageNumber, scale, pageBackground, displayRevision]);
+  }, [doc, pageNumber, scale, pageBackground, displayRevision, isEpub]);
+
+  useEffect(() => {
+    if (!isEpub) return;
+    const textLayer = textLayerRef.current;
+    if (!textLayer) return;
+
+    let disposed = false;
+    let detach: (() => void) | null = null;
+
+    const attach = () => {
+      if (disposed || detach) return;
+      const chapter = textLayer.querySelector('.epub-chapter');
+      if (!chapter) return;
+
+      const sync = () => {
+        if (!disposed) syncEpubHighlights(textLayer, highlights);
+      };
+      const onScroll = () => {
+        sync();
+        onClearSelection?.();
+      };
+
+      sync();
+      textLayer.addEventListener('scroll', onScroll);
+      const observer = new ResizeObserver(sync);
+      observer.observe(chapter);
+      detach = () => {
+        textLayer.removeEventListener('scroll', onScroll);
+        observer.disconnect();
+      };
+    };
+
+    attach();
+    const mutation = new MutationObserver(attach);
+    mutation.observe(textLayer, { childList: true, subtree: true });
+
+    return () => {
+      disposed = true;
+      mutation.disconnect();
+      detach?.();
+    };
+  }, [isEpub, highlights, onClearSelection, displayRevision, pageNumber]);
 
   return (
     <div
@@ -89,22 +138,24 @@ export function PageCanvas({
       >
         <div ref={canvasHostRef} className="page-canvas" style={{ width, height }} />
         <div ref={textLayerRef} className="textLayer" />
-        <div className="page-highlights">
-          {highlights.map((h) =>
-            (h.rects ?? []).map((rect, i) => (
-              <div
-                key={`${h.id}-${i}`}
-                className="page-highlight"
-                style={{
-                  left: rect.left * width,
-                  top: rect.top * height,
-                  width: rect.width * width,
-                  height: rect.height * height,
-                }}
-              />
-            )),
-          )}
-        </div>
+        {!isEpub && (
+          <div className="page-highlights">
+            {highlights.map((h) =>
+              (h.rects ?? []).map((rect, i) => (
+                <div
+                  key={`${h.id}-${i}`}
+                  className="page-highlight"
+                  style={{
+                    left: rect.left * width,
+                    top: rect.top * height,
+                    width: rect.width * width,
+                    height: rect.height * height,
+                  }}
+                />
+              )),
+            )}
+          </div>
+        )}
       </div>
       {!rendered && <div className="page-placeholder">Page {pageNumber}</div>}
     </div>
