@@ -43,7 +43,14 @@ test.describe('annotations', () => {
     await page.mouse.up();
 
     await page.getByRole('button', { name: 'Highlight' }).click();
-    await expect(page.locator('.page-highlight')).toBeVisible({ timeout: 5_000 });
+    const highlight = page.locator('.epub-chapter .epub-highlights .page-highlight');
+    await expect(highlight).toBeVisible({ timeout: 5_000 });
+
+    const textLayer = page.locator('.epub-text-layer').first();
+    await textLayer.evaluate((el) => {
+      el.scrollTop = 120;
+    });
+    await expect(highlight).toBeVisible();
     await captureStep(page, 'annotations-epub-highlight');
   });
 });
