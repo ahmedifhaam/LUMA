@@ -68,9 +68,22 @@ body {
 .btn:active {
   transform: translateY(1px);
 }
-.btn:disabled {
+.btn:disabled,
+.btn--disabled {
   opacity: 0.55;
   cursor: not-allowed;
+  pointer-events: none;
+}
+.file-input-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 .btn--primary {
   background: var(--accent);
@@ -107,6 +120,12 @@ body {
   justify-content: space-between;
   gap: 1rem;
   margin-bottom: 1.5rem;
+}
+.library__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-shrink: 0;
 }
 .library__title {
   margin: 0;
@@ -626,6 +645,87 @@ body {
 }
 .selection-popover:hover {
   background: var(--accent-hover);
+}
+
+/* Keyboard shortcuts help */
+.shortcuts-page {
+  padding: 2rem clamp(1rem, 4vw, 3rem);
+  overflow-y: auto;
+  height: 100%;
+  max-width: 52rem;
+}
+.shortcuts-page__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+.shortcuts-page__title {
+  margin: 0;
+  font-size: 1.9rem;
+}
+.shortcuts-page__subtitle {
+  margin: 0.35rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  max-width: 38rem;
+}
+.shortcuts-page__groups {
+  display: grid;
+  gap: 1.5rem;
+}
+.shortcuts-group {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.25rem;
+}
+.shortcuts-group__title {
+  margin: 0 0 0.85rem;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.shortcuts-list {
+  margin: 0;
+}
+.shortcuts-list__row {
+  display: grid;
+  grid-template-columns: minmax(8rem, auto) 1fr;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.55rem 0;
+  border-top: 1px solid var(--border);
+}
+.shortcuts-list__row:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+.shortcuts-list__keys {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0;
+}
+.shortcuts-list__desc {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.92rem;
+}
+.kbd {
+  display: inline-block;
+  min-width: 1.6rem;
+  padding: 0.2rem 0.45rem;
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  background: var(--bg-card);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.82rem;
+  line-height: 1.3;
+  text-align: center;
 }
 
 @media (max-width: 640px) {

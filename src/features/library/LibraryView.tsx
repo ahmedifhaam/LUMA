@@ -1,11 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { ReadingState } from '@/domain/book/types';
 import { useLibraryStore } from '@/application/library/library-store';
-import { mimeTypesForImport } from '@/infrastructure/document-engine/engine-registry';
+import { IMPORT_FILE_ACCEPT } from '@/infrastructure/document-source/file-source';
 import { readingStateRepository } from '@/infrastructure/persistence/repositories';
+
+const IMPORT_INPUT_ID = 'library-import-input';
 
 interface LibraryViewProps {
   onOpenBook: (bookId: string) => void;
+  onOpenShortcuts: () => void;
 }
 
 function formatBytes(bytes: number): string {
@@ -20,7 +23,7 @@ function formatBytes(bytes: number): string {
   return `${value.toFixed(1)} ${units[unit]}`;
 }
 
-export function LibraryView({ onOpenBook }: LibraryViewProps) {
+export function LibraryView({ onOpenBook, onOpenShortcuts }: LibraryViewProps) {
   const books = useLibraryStore((s) => s.books);
   const loading = useLibraryStore((s) => s.loading);
   const importing = useLibraryStore((s) => s.importing);
@@ -29,7 +32,6 @@ export function LibraryView({ onOpenBook }: LibraryViewProps) {
   const importFile = useLibraryStore((s) => s.importFile);
   const removeBook = useLibraryStore((s) => s.removeBook);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [progressMap, setProgressMap] = useState<Record<string, ReadingState>>({});
 
@@ -64,7 +66,6 @@ export function LibraryView({ onOpenBook }: LibraryViewProps) {
         // Error surfaced via store state.
       }
     }
-    if (fileInputRef.current) fileInputRef.current.value = '';
   }
 
   return (
@@ -76,22 +77,37 @@ export function LibraryView({ onOpenBook }: LibraryViewProps) {
             Local-first reading for very large documents.
           </p>
         </div>
-        <button
-          className="btn btn--primary"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={importing}
-        >
-          {importing ? 'Importing…' : '+ Add Book'}
-        </button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept={mimeTypesForImport()}
-          multiple
-          hidden
-          data-testid="file-input"
-          onChange={(event) => void handleFiles(event.target.files)}
-        />
+        <div className="library__header-actions">
+          <button
+            className="btn btn--ghost"
+            onClick={onOpenShortcuts}
+            data-testid="open-shortcuts"
+          >
+            Keyboard shortcuts
+          </button>
+          <input
+            id={IMPORT_INPUT_ID}
+            className="file-input-hidden"
+            type="file"
+            accept={IMPORT_FILE_ACCEPT}
+            multiple
+            disabled={importing}
+            data-testid="file-input"
+            onChange={(event) => {
+              const input = event.currentTarget;
+              void handleFiles(input.files).finally(() => {
+                input.value = '';
+              });
+            }}
+          />
+          <label
+            htmlFor={IMPORT_INPUT_ID}
+            className={`btn btn--primary${importing ? ' btn--disabled' : ''}`}
+            data-testid="add-book"
+          >
+            {importing ? 'Importing…' : '+ Add Book'}
+          </label>
+        </div>
       </header>
 
       {notice && <div className="library__notice">{notice}</div>}
