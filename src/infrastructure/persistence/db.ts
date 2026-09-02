@@ -19,12 +19,15 @@ export function getDatabaseName(): string {
 }
 
 export const DB_NAME = 'luma';
-export const DB_VERSION = 2;
+export const DB_VERSION = 3;
 
 export const STORE_BOOKS = 'books';
 export const STORE_READING_STATE = 'readingState';
 export const STORE_SOURCES = 'sources';
 export const STORE_ANNOTATIONS = 'annotations';
+export const STORE_SYNC_QUEUE = 'syncQueue';
+export const STORE_SYNC_META = 'syncMeta';
+export const STORE_SYNC_SESSIONS = 'syncSessions';
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
@@ -40,8 +43,9 @@ export function openDatabase(): Promise<IDBDatabase> {
   dbPromise = new Promise((resolve, reject) => {
     const request = indexedDB.open(getDatabaseName(), DB_VERSION);
 
-    request.onupgradeneeded = () => {
+    request.onupgradeneeded = (event) => {
       const db = request.result;
+      const fromVersion = event.oldVersion;
 
       if (!db.objectStoreNames.contains(STORE_BOOKS)) {
         db.createObjectStore(STORE_BOOKS, { keyPath: 'id' });
@@ -54,10 +58,29 @@ export function openDatabase(): Promise<IDBDatabase> {
         store.createIndex('byBook', 'bookId', { unique: false });
       }
 
-      if (db.objectStoreNames.contains(STORE_READING_STATE)) {
-        db.deleteObjectStore(STORE_READING_STATE);
+      if (fromVersion < 2) {
+        if (db.objectStoreNames.contains(STORE_READING_STATE)) {
+          db.deleteObjectStore(STORE_READING_STATE);
+        }
+        createReadingStateStore(db);
+      } else if (!db.objectStoreNames.contains(STORE_READING_STATE)) {
+        createReadingStateStore(db);
       }
-      createReadingStateStore(db);
+
+      if (fromVersion < 3) {
+        if (!db.objectStoreNames.contains(STORE_SYNC_QUEUE)) {
+          const queue = db.createObjectStore(STORE_SYNC_QUEUE, { keyPath: 'mutationId' });
+          queue.createIndex('byBookDevice', 'bookDeviceKey', { unique: false });
+          queue.createIndex('byNextAttempt', 'nextAttemptAt', { unique: false });
+        }
+        if (!db.objectStoreNames.contains(STORE_SYNC_META)) {
+          db.createObjectStore(STORE_SYNC_META, { keyPath: 'accountId' });
+        }
+        if (!db.objectStoreNames.contains(STORE_SYNC_SESSIONS)) {
+          const sessions = db.createObjectStore(STORE_SYNC_SESSIONS, { keyPath: 'id' });
+          sessions.createIndex('byBook', 'bookId', { unique: false });
+        }
+      }
     };
 
     request.onsuccess = () => resolve(request.result);
