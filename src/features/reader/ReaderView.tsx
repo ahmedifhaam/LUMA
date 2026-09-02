@@ -13,8 +13,6 @@ import { NotesPanel } from './panels/NotesPanel';
 import { useReaderShortcuts } from './useReaderShortcuts';
 import { isEditableTarget } from './reader-shortcuts';
 import { ReaderBottomBar } from './ReaderBottomBar';
-import { ReaderDisplayControls } from './ReaderDisplayControls';
-import { ReaderLayoutControls } from './ReaderLayoutControls';
 import {
   applyZoomMultiplier,
   clampIndex,
@@ -435,24 +433,6 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
           >
             ›
           </button>
-        </div>
-
-        <div className="reader__toolbar-layout" data-testid="reader-toolbar-layout">
-          <ReaderDisplayControls
-            zoomIndex={displayPrefs.zoomIndex}
-            textSizeIndex={displayPrefs.textSizeIndex}
-            themeId={displayPrefs.themeId}
-            textSizingEnabled={textSizingEnabled}
-            onZoomIndexChange={handleZoomIndexChange}
-            onTextSizeIndexChange={handleTextSizeIndexChange}
-            onThemeChange={handleThemeChange}
-          />
-          <ReaderLayoutControls
-            fitMode={fitMode}
-            viewMode={viewMode}
-            onFitModeChange={handleFitModeChange}
-            onViewModeChange={handleViewModeChange}
-          />
         </div>
 
         <div className="reader__panel-tabs">
