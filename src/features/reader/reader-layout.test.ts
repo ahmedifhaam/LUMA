@@ -5,6 +5,7 @@ import {
   pageAtScroll,
   spreadCount,
   spreadsInRange,
+  stepPage,
 } from './reader-layout';
 
 const base = { pageNumber: 1, width: 600, height: 800 };
@@ -36,6 +37,19 @@ describe('pageAtScroll', () => {
   it('maps scroll position to a spread page in double mode', () => {
     expect(pageAtScroll(0, 800, 10, 'double', 800, 1200, 500)).toBe(1);
     expect(pageAtScroll(800, 800, 10, 'double', 800, 1200, 500)).toBe(3);
+  });
+});
+
+describe('stepPage', () => {
+  it('advances by spread in double mode', () => {
+    expect(stepPage(1, 24, 'double', 1)).toBe(3);
+    expect(stepPage(2, 24, 'double', 1)).toBe(3);
+    expect(stepPage(3, 24, 'double', -1)).toBe(1);
+  });
+
+  it('advances one page in single and continuous modes', () => {
+    expect(stepPage(1, 24, 'single', 1)).toBe(2);
+    expect(stepPage(1, 24, 'continuous', 1)).toBe(2);
   });
 });
 

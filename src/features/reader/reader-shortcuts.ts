@@ -1,8 +1,13 @@
-export type ReaderPanelId = 'contents' | 'search' | 'bookmarks' | 'notes';
+import {
+  firstPageForMode,
+  lastPageForMode,
+  stepPage,
+} from './reader-layout';
 
 export interface ReaderShortcutState {
   currentPage: number;
   pageCount: number;
+  viewMode: 'single' | 'double' | 'continuous';
   activePanel: ReaderPanelId | null;
   hasSelection: boolean;
 }
@@ -82,13 +87,13 @@ export function pageForShortcut(
   const maxPage = Math.max(state.pageCount, 1);
   switch (action.type) {
     case 'previous-page':
-      return Math.max(state.currentPage - 1, 1);
+      return stepPage(state.currentPage, state.pageCount, state.viewMode, -1);
     case 'next-page':
-      return Math.min(state.currentPage + 1, maxPage);
+      return stepPage(state.currentPage, state.pageCount, state.viewMode, 1);
     case 'first-page':
-      return 1;
+      return firstPageForMode(state.pageCount, state.viewMode);
     case 'last-page':
-      return maxPage;
+      return lastPageForMode(state.pageCount, state.viewMode);
     default:
       return null;
   }

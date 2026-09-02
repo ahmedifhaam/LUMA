@@ -78,6 +78,36 @@ export function offsetForPage(
   return (pageNumber - 1) * slotHeight;
 }
 
+export function stepPage(
+  currentPage: number,
+  pageCount: number,
+  viewMode: ViewMode,
+  direction: -1 | 1,
+): number {
+  const maxPage = Math.max(pageCount, 1);
+  if (viewMode !== 'double') {
+    return Math.min(Math.max(currentPage + direction, 1), maxPage);
+  }
+
+  const spread = spreadIndexForPage(currentPage);
+  const targetSpread = spread + direction;
+  const maxSpread = spreadCount(pageCount) - 1;
+  const clampedSpread = Math.min(Math.max(targetSpread, 0), maxSpread);
+  return leftPageForSpread(clampedSpread);
+}
+
+export function firstPageForMode(pageCount: number, viewMode: ViewMode): number {
+  void pageCount;
+  void viewMode;
+  return 1;
+}
+
+export function lastPageForMode(pageCount: number, viewMode: ViewMode): number {
+  const maxPage = Math.max(pageCount, 1);
+  if (viewMode !== 'double') return maxPage;
+  return leftPageForSpread(spreadCount(pageCount) - 1);
+}
+
 export function pageAtScroll(
   scrollTop: number,
   viewportHeight: number,

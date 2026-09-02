@@ -34,6 +34,7 @@ import {
   slotHeightForMode,
   spreadsInRange,
   scrollSlotCount,
+  stepPage,
   storeFitMode,
   storeViewMode,
   type PageFitMode,
@@ -172,14 +173,48 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
     [annotations, currentPage],
   );
 
+  const syncPageFromScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    onScroll(el.scrollTop, el.clientHeight);
+    const page = layoutPageAtScroll(
+      el.scrollTop,
+      el.clientHeight,
+      pageCount,
+      viewMode,
+      slotHeight,
+      el.clientWidth,
+      pageWidth,
+    );
+    const yOffset =
+      viewMode === 'continuous'
+        ? Math.min(
+            Math.max((el.scrollTop - layoutOffsetForPageNumber(page)) / slotHeight, 0),
+            1,
+          )
+        : 0;
+    setCurrentPage(page);
+    setPageInput(String(page));
+    updateLocation({ pageNumber: page, yOffset });
+  }, [
+    onScroll,
+    pageCount,
+    viewMode,
+    slotHeight,
+    pageWidth,
+    layoutOffsetForPageNumber,
+    updateLocation,
+  ]);
+
   const goToPage = useCallback(
     (page: number) => {
       const el = scrollRef.current;
       if (!el || slotHeight <= 0) return;
       const target = Math.min(Math.max(page, 1), Math.max(pageCount, 1));
       el.scrollTo({ top: layoutOffsetForPageNumber(target), behavior: 'auto' });
+      syncPageFromScroll();
     },
-    [layoutOffsetForPageNumber, slotHeight, pageCount],
+    [layoutOffsetForPageNumber, slotHeight, pageCount, syncPageFromScroll],
   );
 
   useEffect(() => {
@@ -264,35 +299,8 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
     if (!el || !restoredRef.current) return;
     window.getSelection()?.removeAllRanges();
     setSelection(null);
-    onScroll(el.scrollTop, el.clientHeight);
-    const page = layoutPageAtScroll(
-      el.scrollTop,
-      el.clientHeight,
-      pageCount,
-      viewMode,
-      slotHeight,
-      el.clientWidth,
-      pageWidth,
-    );
-    const yOffset =
-      viewMode === 'continuous'
-        ? Math.min(
-            Math.max((el.scrollTop - layoutOffsetForPageNumber(page)) / slotHeight, 0),
-            1,
-          )
-        : 0;
-    setCurrentPage(page);
-    setPageInput(String(page));
-    updateLocation({ pageNumber: page, yOffset });
-  }, [
-    onScroll,
-    pageCount,
-    viewMode,
-    slotHeight,
-    pageWidth,
-    layoutOffsetForPageNumber,
-    updateLocation,
-  ]);
+    syncPageFromScroll();
+  }, [syncPageFromScroll]);
 
   const handlePointerUp = useCallback(() => {
     const el = scrollRef.current;
@@ -311,6 +319,13 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
     window.getSelection()?.removeAllRanges();
     setSelection(null);
   }, [selection, addHighlight]);
+
+  const stepReaderPage = useCallback(
+    (direction: -1 | 1) => {
+      goToPage(stepPage(currentPage, pageCount, viewMode, direction));
+    },
+    [goToPage, currentPage, pageCount, viewMode],
+  );
 
   const submitPage = useCallback(() => {
     const parsed = Number.parseInt(pageInput, 10);
@@ -332,6 +347,7 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
   useReaderShortcuts({
     currentPage,
     pageCount,
+    viewMode,
     activePanel,
     hasSelection: selection !== null,
     onGoToPage: goToPage,
@@ -367,6 +383,8 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
     );
   }
   if (!doc || !book) return null;
+
+  const epubScrollable = viewMode === 'continuous';
 
   const pages: number[] = [];
   for (let page = range.start; page <= range.end; page += 1) pages.push(page);
@@ -406,7 +424,7 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
         <div className="reader__nav">
           <button
             className="btn btn--icon"
-            onClick={() => goToPage(currentPage - 1)}
+            onClick={() => stepReaderPage(-1)}
             aria-label="Previous page"
           >
             ‹
@@ -430,7 +448,7 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
           </form>
           <button
             className="btn btn--icon"
-            onClick={() => goToPage(currentPage + 1)}
+            onClick={() => stepReaderPage(1)}
             aria-label="Next page"
           >
             ›
@@ -504,6 +522,7 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
                     bookFormat={book.format ?? 'pdf'}
                     highlights={highlightsByPage.get(page) ?? []}
                     onClearSelection={clearSelection}
+                    epubScrollable={epubScrollable}
                   />
                 ))}
 
@@ -529,6 +548,7 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
                       bookFormat={book.format ?? 'pdf'}
                       highlights={highlightsByPage.get(page) ?? []}
                       onClearSelection={clearSelection}
+                      epubScrollable={epubScrollable}
                     />
                   </div>
                 ))}
@@ -553,6 +573,7 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
                         bookFormat={book.format ?? 'pdf'}
                         highlights={highlightsByPage.get(spread.leftPage) ?? []}
                         onClearSelection={clearSelection}
+                        epubScrollable={epubScrollable}
                       />
                       {spread.rightPage ? (
                         <PageCanvas
@@ -567,6 +588,7 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
                           bookFormat={book.format ?? 'pdf'}
                           highlights={highlightsByPage.get(spread.rightPage) ?? []}
                           onClearSelection={clearSelection}
+                          epubScrollable={epubScrollable}
                         />
                       ) : (
                         <div

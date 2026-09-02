@@ -17,6 +17,8 @@ interface PageCanvasProps {
   bookFormat: BookFormat;
   highlights: Annotation[];
   onClearSelection?: () => void;
+  /** Allow EPUB chapter text to scroll inside the page (continuous view). */
+  epubScrollable?: boolean;
 }
 
 /**
@@ -40,6 +42,7 @@ export function PageCanvas({
   bookFormat,
   highlights,
   onClearSelection,
+  epubScrollable = false,
 }: PageCanvasProps) {
   const canvasHostRef = useRef<HTMLDivElement>(null);
   const textLayerRef = useRef<HTMLDivElement>(null);
@@ -137,6 +140,25 @@ export function PageCanvas({
     };
   }, [isEpub, highlights, onClearSelection, displayRevision, pageNumber]);
 
+  useEffect(() => {
+    if (!isEpub || epubScrollable) return;
+    const textLayer = textLayerRef.current;
+    if (!textLayer) return;
+
+    const onWheel = (event: WheelEvent) => {
+      const viewport = textLayer.closest('[data-reader-viewport]');
+      if (!(viewport instanceof HTMLElement)) return;
+      viewport.scrollTop += event.deltaY;
+      event.preventDefault();
+    };
+
+    textLayer.addEventListener('wheel', onWheel, { passive: false });
+    return () => textLayer.removeEventListener('wheel', onWheel);
+  }, [isEpub, epubScrollable, displayRevision, pageNumber]);
+
+  const textLayerClassName =
+    isEpub && !epubScrollable ? 'textLayer epub-text-layer--paginated' : 'textLayer';
+
   return (
     <div
       className={`page-slot${inline ? ' page-slot--inline' : ''}`}
@@ -149,7 +171,7 @@ export function PageCanvas({
         style={{ width, height, backgroundColor: pageBackground }}
       >
         <div ref={canvasHostRef} className="page-canvas" style={{ width, height }} />
-        <div ref={textLayerRef} className="textLayer" />
+        <div ref={textLayerRef} className={textLayerClassName} />
         {!isEpub && (
           <div className="page-highlights">
             {highlights.map((h) =>
