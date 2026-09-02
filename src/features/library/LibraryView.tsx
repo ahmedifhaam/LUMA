@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Book, ReadingState } from '@/domain/book/types';
 import { normalizeBookSource } from '@/domain/book/source';
+import { AuthPanel } from '@/features/auth/AuthPanel';
 import { useLibraryStore } from '@/application/library/library-store';
 import { IMPORT_FILE_ACCEPT } from '@/infrastructure/document-source/file-source';
 import { readingStateRepository } from '@/infrastructure/persistence/repositories';
@@ -88,6 +89,7 @@ export function LibraryView({ onOpenBook, onOpenShortcuts }: LibraryViewProps) {
           </p>
         </div>
         <div className="library__header-actions">
+          <AuthPanel />
           <button
             className="btn btn--ghost"
             onClick={onOpenShortcuts}

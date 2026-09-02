@@ -126,6 +126,51 @@ body {
   align-items: center;
   gap: 0.65rem;
   flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.auth-panel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.auth-panel__form {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+.auth-panel__input {
+  min-width: 7rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 0.45rem;
+  background: var(--surface);
+  color: var(--text);
+}
+.auth-panel__button {
+  padding: 0.45rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.45rem;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+.auth-panel__button--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.auth-panel__user {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+.auth-panel__error {
+  margin: 0;
+  width: 100%;
+  color: #c0392b;
+  font-size: 0.85rem;
 }
 .library__title {
   margin: 0;

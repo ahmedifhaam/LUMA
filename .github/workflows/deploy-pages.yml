@@ -2,7 +2,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    # Auto-deploy only V1 release branches. Phase 2+ work on main does not ship to Pages.
+    # Auto-deploy only V1 release branches. Phase 2 develops on v2; main is not deployed.
     branches: ['v1.*']
   workflow_dispatch:
     inputs:

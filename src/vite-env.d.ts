@@ -3,6 +3,7 @@
 
 interface ImportMetaEnv {
   readonly VITE_CLOUD_ENABLED?: string;
+  readonly VITE_API_BASE_URL?: string;
 }
 
 interface ImportMeta {
