@@ -2,15 +2,12 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    # Auto-deploy only the stable V1 line. Phase 2+ work on main does not ship to Pages.
-    branches: [v1.0]
-    tags: ['v1.*']
-  # Manual deploy: run from the default branch (main) so environment rules allow it,
-  # while checking out the ref below (defaults to v1.0).
+    # Auto-deploy only V1 release branches. Phase 2+ work on main does not ship to Pages.
+    branches: ['v1.*']
   workflow_dispatch:
     inputs:
       ref:
-        description: Branch or tag to build and deploy
+        description: Branch to build and deploy
         required: false
         default: v1.0
 
