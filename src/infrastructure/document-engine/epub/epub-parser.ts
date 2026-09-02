@@ -107,10 +107,9 @@ function parseNavList(root: Element, opfDir: string): EpubNavItem[] {
     if (li.tagName.toLowerCase() !== 'li') continue;
     const anchor = li.querySelector(':scope > a, :scope > span > a');
     const nested = li.querySelector(':scope > ol, :scope > ul');
-    const href = anchor?.getAttribute('href') ?? '';
     items.push({
       title: anchor?.textContent?.trim() ?? 'Untitled',
-      href: href ? resolvePath(opfDir, href) : '',
+      href: anchor?.getAttribute('href') ?? '',
       children: nested ? parseNavList(nested, opfDir) : [],
     });
   }
@@ -154,7 +153,9 @@ function parseNcx(ncx: string, opfDir: string): EpubNavItem[] {
 
 function hrefToPageNumber(spine: EpubSpineItem[], opfDir: string, href: string): number | null {
   const target = resolvePath(opfDir, href.split('#')[0] ?? href);
-  const index = spine.findIndex((item) => resolvePath(opfDir, item.href) === target);
+  const index = spine.findIndex(
+    (item) => resolvePath(opfDir, item.href.split('#')[0] ?? item.href) === target,
+  );
   return index >= 0 ? index + 1 : null;
 }
 
