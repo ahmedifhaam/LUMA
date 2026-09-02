@@ -84,6 +84,11 @@ export interface OpenDocument {
   ): TextLayerTask;
   /** The document's table of contents, or an empty array when none exists. */
   getOutline(): Promise<DocumentOutlineItem[]>;
+  /**
+   * A small cover/thumbnail image as a data URL (e.g. JPEG), when the format
+   * can provide one. Used for library display only.
+   */
+  extractCoverThumbnail?(): Promise<string | null>;
   destroy(): Promise<void>;
 }
 

@@ -34,6 +34,7 @@ function makeFakeEngine(pageCount: number, hasText: boolean): DocumentEngine {
         extractPageText: async () => '',
         renderTextLayer: () => ({ promise: Promise.resolve(), cancel: () => {} }),
         getOutline: async () => [],
+        extractCoverThumbnail: async () => 'data:image/jpeg;base64,thumb',
         destroy: async () => {},
       };
     },
@@ -62,6 +63,7 @@ describe('importBook', () => {
     expect(result.isDuplicate).toBe(false);
     expect(result.book.title).toBe('Hello');
     expect(result.book.pageCount).toBe(12);
+    expect(result.book.coverThumbnail).toBe('data:image/jpeg;base64,thumb');
 
     const stored = await bookRepository.get(result.book.id);
     expect(stored).toBeTruthy();

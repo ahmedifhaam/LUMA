@@ -164,6 +164,26 @@ class PdfDocument implements OpenDocument {
     return map(raw as unknown as RawOutline[]);
   }
 
+  async extractCoverThumbnail(): Promise<string | null> {
+    try {
+      const page = await this.#page(1);
+      const baseViewport = page.getViewport({ scale: 1 });
+      const maxWidth = 160;
+      const scale = Math.min(maxWidth / baseViewport.width, 1);
+      const viewport = page.getViewport({ scale });
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      if (!context) return null;
+
+      canvas.width = Math.ceil(viewport.width);
+      canvas.height = Math.ceil(viewport.height);
+      await page.render({ canvasContext: context, viewport }).promise;
+      return canvas.toDataURL('image/jpeg', 0.75);
+    } catch {
+      return null;
+    }
+  }
+
   async destroy(): Promise<void> {
     this.#pageCache.clear();
     await this.#doc.destroy();
