@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Annotation, NormalizedRect } from '@/domain/book/types';
+import type { Annotation, NormalizedRect, TextAnchor } from '@/domain/book/types';
 import type { DocumentLocation } from '@/domain/document/types';
 import { annotationRepository } from '@/infrastructure/persistence/repositories';
 
@@ -7,6 +7,7 @@ interface AddHighlightInput {
   location: DocumentLocation;
   quote: string;
   rects: NormalizedRect[];
+  textAnchor?: TextAnchor;
   note?: string;
 }
 
@@ -95,7 +96,7 @@ export const useAnnotationsStore = create<AnnotationsState>((set, get) => ({
     set({ annotations: annotations.map((a) => (a.id === id ? updated : a)) });
   },
 
-  async addHighlight({ location, quote, rects, note }) {
+  async addHighlight({ location, quote, rects, textAnchor, note }) {
     const { bookId, annotations } = get();
     if (!bookId) throw new Error('No book loaded');
     const annotation: Annotation = {
@@ -105,6 +106,7 @@ export const useAnnotationsStore = create<AnnotationsState>((set, get) => ({
       location,
       quote,
       rects,
+      textAnchor,
       note,
       createdAt: Date.now(),
     };
