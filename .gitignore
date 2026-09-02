@@ -11,6 +11,9 @@ coverage
 playwright-report
 test-results
 .vitest
+e2e/fixtures/*
+!e2e/fixtures/.gitkeep
+e2e/artifacts/
 
 # Editor / OS
 .DS_Store
