@@ -1,4 +1,4 @@
-import type { ContinuationOffer, DeviceSession, ReadingStatePush, SyncStateService } from './types';
+import type { ContinuationOffer, DeviceSession, ReadingLocationEnvelope, ReadingStatePush, SyncStateService } from './types';
 
 export class LocalSyncStub implements SyncStateService {
   async pushReadingState(_bookId: string, _state: ReadingStatePush): Promise<void> {
@@ -9,7 +9,11 @@ export class LocalSyncStub implements SyncStateService {
     return [];
   }
 
-  async getContinuationOffer(_bookId: string, _currentDeviceId: string): Promise<ContinuationOffer> {
+  async getContinuationOffer(
+    _bookId: string,
+    _currentDeviceId: string,
+    _currentLocation: ReadingLocationEnvelope,
+  ): Promise<ContinuationOffer> {
     return null;
   }
 

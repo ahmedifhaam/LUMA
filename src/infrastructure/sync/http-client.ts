@@ -87,13 +87,9 @@ export class HttpSyncStateService implements SyncStateService {
   async getContinuationOffer(
     bookId: string,
     currentDeviceId: string,
+    currentLocation: ReadingLocationEnvelope,
   ): Promise<ContinuationOffer> {
     const sessions = await this.pullReadingState(bookId);
-    const current = sessions.find((s) => s.deviceId === currentDeviceId);
-    const currentLocation = current?.location ?? {
-      format: 'pdf' as const,
-      locator: { pageNumber: 1, yOffset: 0 },
-    };
 
     return findContinuationOffer(
       sessions,

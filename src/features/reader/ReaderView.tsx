@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { Annotation } from '@/domain/book/types';
-import type { PageGeometry } from '@/domain/document/types';
+import type { DocumentLocation, PageGeometry } from '@/domain/document/types';
+import { useContinuationStore } from '@/application/sync/continuation-store';
 import { AppMenu } from '@/features/menu/AppMenu';
 import { useReaderStore } from '@/application/reader/reader-store';
 import { useAnnotationsStore } from '@/application/annotations/annotations-store';
@@ -13,6 +14,7 @@ import { BookmarksPanel } from './panels/BookmarksPanel';
 import { NotesPanel } from './panels/NotesPanel';
 import { useReaderShortcuts } from './useReaderShortcuts';
 import { isEditableTarget } from './reader-shortcuts';
+import { ContinuationPrompt } from './ContinuationPrompt';
 import { ReaderBottomBar } from './ReaderBottomBar';
 import {
   applyZoomMultiplier,
@@ -85,12 +87,22 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
   const [selection, setSelection] = useState<SelectionHighlight | null>(null);
   const restoredRef = useRef(false);
   const layoutChangeRef = useRef(false);
+  const continuationCheckedRef = useRef<string | null>(null);
 
   useEffect(() => {
     restoredRef.current = false;
+    continuationCheckedRef.current = null;
     setBase(null);
     if (doc) void doc.getPageGeometry(1).then(setBase);
   }, [doc]);
+
+  useEffect(() => {
+    if (status !== 'ready' || !book) return;
+    if (continuationCheckedRef.current === book.id) return;
+    continuationCheckedRef.current = book.id;
+    const format = book.format ?? 'pdf';
+    void useContinuationStore.getState().checkOnOpen(book.id, format, location);
+  }, [status, book, location]);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -340,6 +352,29 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
     [goToPage],
   );
 
+  const handleContinuationContinue = useCallback(
+    (loc: DocumentLocation) => {
+      updateLocation(loc);
+      const el = scrollRef.current;
+      if (!el || slotHeight <= 0) return;
+      const page = Math.min(Math.max(loc.pageNumber, 1), Math.max(pageCount, 1));
+      const top =
+        viewMode === 'continuous'
+          ? layoutOffsetForPageNumber(page) + loc.yOffset * slotHeight
+          : layoutOffsetForPageNumber(page);
+      el.scrollTo({ top, behavior: 'auto' });
+      syncPageFromScroll();
+    },
+    [
+      updateLocation,
+      slotHeight,
+      pageCount,
+      viewMode,
+      layoutOffsetForPageNumber,
+      syncPageFromScroll,
+    ],
+  );
+
   const clearSelection = useCallback(() => {
     window.getSelection()?.removeAllRanges();
     setSelection(null);
@@ -474,6 +509,8 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
           <AppMenu onOpenShortcuts={onOpenShortcuts} />
         </div>
       </header>
+
+      <ContinuationPrompt onContinue={handleContinuationContinue} />
 
       {!book.hasText && (
         <div className="reader__image-warning" role="alert" data-testid="image-warning">

@@ -17,7 +17,9 @@ import {
   readingStateRepository,
 } from '@/infrastructure/persistence/repositories';
 import { useAnnotationsStore } from '@/application/annotations/annotations-store';
+import { pushReadingStateIfEligible } from '@/application/sync/reading-sync';
 import { useSearchStore } from '@/application/search/search-store';
+import { authService } from '@/infrastructure/auth';
 
 type ReaderStatus = 'idle' | 'opening' | 'ready' | 'error';
 
@@ -149,5 +151,13 @@ export const useReaderStore = create<ReaderState>((set, get) => ({
       updatedAt: now,
     });
     await readingStateRepository.save(state).catch(() => undefined);
+
+    const session = await authService.getSession();
+    await pushReadingStateIfEligible(
+      book,
+      location,
+      progress,
+      session !== null,
+    ).catch(() => undefined);
   },
 }));

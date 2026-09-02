@@ -655,6 +655,29 @@ body {
   font-size: 0.9rem;
   flex-shrink: 0;
 }
+.continuation-prompt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  background: var(--bg-elevated);
+  border-bottom: 2px solid var(--accent);
+  padding: 0.6rem 1rem;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+.continuation-prompt__text {
+  color: var(--text);
+  flex: 1;
+  min-width: 0;
+}
+.continuation-prompt__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
 .reader__progress {
   height: 3px;
   background: var(--border);
