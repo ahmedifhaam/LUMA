@@ -3,7 +3,7 @@ import { mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const apiBaseUrl = process.env.VITE_API_BASE_URL ?? 'http://localhost:3000';
 
 async function waitForApi(timeoutMs = 120_000): Promise<void> {

@@ -16,11 +16,14 @@ test.describe('Phase 2 cross-device sync', () => {
     const pageA = await deviceA.newPage();
     const pageB = await deviceB.newPage();
 
+    await pageA.goto('/');
+    await pageB.goto('/');
+
     await setDeviceId(pageA, 'phase2-device-a');
     await setDeviceId(pageB, 'phase2-device-b');
 
-    await pageA.goto('/');
-    await pageB.goto('/');
+    await pageA.reload();
+    await pageB.reload();
 
     await signInViaUi(pageA);
     await signInViaUi(pageB);

@@ -23,8 +23,8 @@ export async function signInViaUi(
 }
 
 export async function savePhase2Video(page: Page, name: string): Promise<void> {
-  await page.close();
   const video = page.video();
+  await page.close();
   if (!video) return;
   const { mkdirSync } = await import('node:fs');
   mkdirSync(PR_VIDEOS_DIR, { recursive: true });
