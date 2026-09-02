@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
 import {
+  createPhase2Context,
   pullReadingSessions,
   pushReadingSession,
-  savePhase2Video,
   setDeviceId,
   signInViaUi,
 } from './helpers/cloud-utils';
@@ -11,8 +11,8 @@ test.describe('Phase 2 cross-device sync', () => {
   test('syncs reading sessions between two devices', async ({ browser }) => {
     const bookId = 'test-book-sync-001';
 
-    const deviceA = await browser.newContext();
-    const deviceB = await browser.newContext();
+    const deviceA = await createPhase2Context(browser);
+    const deviceB = await createPhase2Context(browser);
     const pageA = await deviceA.newPage();
     const pageB = await deviceB.newPage();
 
@@ -42,9 +42,6 @@ test.describe('Phase 2 cross-device sync', () => {
       0.42,
       2,
     );
-
-    await savePhase2Video(pageA, 'phase2-cross-device-sync-a');
-    await savePhase2Video(pageB, 'phase2-cross-device-sync-b');
 
     await deviceA.close();
     await deviceB.close();

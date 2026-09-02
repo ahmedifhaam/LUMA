@@ -55,12 +55,25 @@ export default defineConfig({
     },
     {
       name: 'phase2',
-      testMatch: /phase2\/.*\.spec\.ts/,
+      testMatch: /phase2\/(?!happy-paths).*\.spec\.ts/,
       use: {
         ...devices['Desktop Chrome'],
         channel: 'chrome',
         video: 'on',
         screenshot: 'on',
+        trace: 'on',
+        viewport: { width: 1280, height: 800 },
+      },
+    },
+    {
+      name: 'phase2-recordings',
+      testMatch: /phase2\/happy-paths\.spec\.ts/,
+      fullyParallel: false,
+      use: {
+        ...devices['Desktop Chrome'],
+        channel: 'chrome',
+        video: 'on',
+        screenshot: 'off',
         trace: 'on',
         viewport: { width: 1280, height: 800 },
       },

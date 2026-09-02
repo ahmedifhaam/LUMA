@@ -24,7 +24,8 @@
     "docker:up": "docker compose up -d --wait",
     "docker:down": "docker compose down",
     "dev:cloud": "VITE_CLOUD_ENABLED=true VITE_API_BASE_URL=http://localhost:3000 npm run dev",
-    "test:e2e:phase2": "CI=true PHASE2_DOCKER=true VITE_CLOUD_ENABLED=true VITE_API_BASE_URL=http://localhost:3000 playwright test --project=phase2"
+    "test:e2e:phase2": "CI=true PHASE2_DOCKER=true VITE_CLOUD_ENABLED=true VITE_API_BASE_URL=http://localhost:3000 playwright test --project=phase2 --project=phase2-recordings",
+    "test:e2e:phase2:recordings": "CI=true PHASE2_DOCKER=true VITE_CLOUD_ENABLED=true VITE_API_BASE_URL=http://localhost:3000 playwright test --project=phase2-recordings"
   },
   "dependencies": {
     "jszip": "^3.10.1",

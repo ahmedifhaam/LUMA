@@ -47,14 +47,20 @@ jobs:
         if: always()
         run: |
           mkdir -p e2e/artifacts/pr-videos
-          find e2e/artifacts/test-results -name '*.webm' -exec cp {} e2e/artifacts/pr-videos/ \; 2>/dev/null || true
-          find e2e/artifacts/pr-videos -name '*.webm' | sort
+          echo "=== Named PR recordings ==="
+          ls -lh e2e/artifacts/pr-videos/*.webm 2>/dev/null || echo "(no .webm files yet)"
+          if [ -f e2e/artifacts/pr-videos/manifest.json ]; then
+            echo "=== Manifest ==="
+            cat e2e/artifacts/pr-videos/manifest.json
+          fi
       - name: Upload E2E videos
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: phase2-e2e-videos
-          path: e2e/artifacts/pr-videos/
+          path: |
+            e2e/artifacts/pr-videos/*.webm
+            e2e/artifacts/pr-videos/manifest.json
           if-no-files-found: ignore
       - name: Upload Playwright report
         if: always()
@@ -68,24 +74,34 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            const fs = require('fs');
             const runUrl = `${context.payload.repository.html_url}/actions/runs/${context.runId}`;
-            const body = [
-              '## Phase 2 E2E recordings',
+            const manifestPath = 'e2e/artifacts/pr-videos/manifest.json';
+            let lines = [
+              '## Phase 2 E2E screen recordings',
               '',
-              `Workflow run: ${runUrl}`,
+              `Download the **phase2-e2e-videos** artifact from the [workflow run](${runUrl}).`,
               '',
-              'Download **phase2-e2e-videos** from the workflow artifacts to review screen recordings.',
-              '',
-              'Named captures (when tests pass):',
-              '- `phase2-cloud-auth.webm`',
-              '- `phase2-cross-device-sync-a.webm`',
-              '- `phase2-cross-device-sync-b.webm`',
-            ].join('\n');
+            ];
+            if (fs.existsSync(manifestPath)) {
+              const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+              lines.push('### Happy path videos', '');
+              for (const rec of manifest.recordings ?? []) {
+                lines.push(`- **\`${rec.file}\`** — ${rec.title}: ${rec.description}`);
+              }
+            } else {
+              lines.push(
+                'Expected recordings:',
+                '- `phase2-01-app-menu-and-sign-in.webm`',
+                '- `phase2-02-read-and-sync.webm`',
+                '- `phase2-03-continuation-on-device-b.webm`',
+              );
+            }
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              body,
+              body: lines.join('\n'),
             });
       - name: Stop API stack
         if: always()

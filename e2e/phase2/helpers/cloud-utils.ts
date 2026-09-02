@@ -1,5 +1,6 @@
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { Page } from '@playwright/test';
+import type { Browser, BrowserContext, Page } from '@playwright/test';
 
 export const PHASE2_TEST_USER = {
   username: 'testuser',
@@ -9,6 +10,36 @@ export const PHASE2_TEST_USER = {
 export const PR_VIDEOS_DIR = join(process.cwd(), 'e2e', 'artifacts', 'pr-videos');
 
 const API_BASE_URL = process.env.VITE_API_BASE_URL ?? 'http://localhost:3000';
+
+const PHASE2_VIEWPORT = { width: 1280, height: 800 };
+
+/** Browser context with video recording (required for manually created contexts). */
+export async function createPhase2Context(browser: Browser): Promise<BrowserContext> {
+  mkdirSync(join(PR_VIDEOS_DIR, '_raw'), { recursive: true });
+  return browser.newContext({
+    viewport: PHASE2_VIEWPORT,
+    recordVideo: {
+      dir: join(PR_VIDEOS_DIR, '_raw'),
+      size: PHASE2_VIEWPORT,
+    },
+  });
+}
+
+export async function setDeviceId(page: Page, deviceId: string): Promise<void> {
+  await page.evaluate((id) => {
+    localStorage.setItem('luma-device-id', id);
+  }, deviceId);
+}
+
+export async function setDeviceDisplayName(page: Page, name: string): Promise<void> {
+  await page.evaluate((deviceName) => {
+    localStorage.setItem('luma-device-name', deviceName);
+  }, name);
+}
+
+export async function closeAppMenu(page: Page): Promise<void> {
+  await page.keyboard.press('Escape');
+}
 
 export async function signInViaUi(
   page: Page,
@@ -26,12 +57,42 @@ export async function signInViaUi(
 }
 
 export async function savePhase2Video(page: Page, name: string): Promise<void> {
+  mkdirSync(PR_VIDEOS_DIR, { recursive: true });
   const video = page.video();
   await page.close();
-  if (!video) return;
-  const { mkdirSync } = await import('node:fs');
-  mkdirSync(PR_VIDEOS_DIR, { recursive: true });
+  if (!video) {
+    throw new Error(`No video attachment for "${name}" — ensure video: 'on' or recordVideo context`);
+  }
   await video.saveAs(join(PR_VIDEOS_DIR, `${name}.webm`));
+}
+
+export async function saveContextVideo(
+  context: BrowserContext,
+  page: Page,
+  name: string,
+): Promise<void> {
+  mkdirSync(PR_VIDEOS_DIR, { recursive: true });
+  const video = page.video();
+  await page.close();
+  await context.close();
+  if (!video) {
+    throw new Error(`No video attachment for "${name}" — use createPhase2Context()`);
+  }
+  await video.saveAs(join(PR_VIDEOS_DIR, `${name}.webm`));
+}
+
+export type Phase2Recording = {
+  file: string;
+  title: string;
+  description: string;
+};
+
+export function writeRecordingsManifest(recordings: Phase2Recording[]): void {
+  mkdirSync(PR_VIDEOS_DIR, { recursive: true });
+  writeFileSync(
+    join(PR_VIDEOS_DIR, 'manifest.json'),
+    `${JSON.stringify({ generatedAt: new Date().toISOString(), recordings }, null, 2)}\n`,
+  );
 }
 
 export async function pushReadingSession(
@@ -102,10 +163,4 @@ export async function pullReadingSessions(
     },
     { bookId, apiBaseUrl: API_BASE_URL },
   );
-}
-
-export async function setDeviceId(page: Page, deviceId: string): Promise<void> {
-  await page.evaluate((id) => {
-    localStorage.setItem('luma-device-id', id);
-  }, deviceId);
 }
