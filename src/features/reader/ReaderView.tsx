@@ -12,11 +12,23 @@ import { BookmarksPanel } from './panels/BookmarksPanel';
 import { NotesPanel } from './panels/NotesPanel';
 import { useReaderShortcuts } from './useReaderShortcuts';
 import { isEditableTarget } from './reader-shortcuts';
+import { ReaderBottomBar } from './ReaderBottomBar';
+import {
+  computePageScale,
+  loadStoredFitMode,
+  loadStoredViewMode,
+  offsetForPage as layoutOffsetForPage,
+  pageAtScroll as layoutPageAtScroll,
+  slotHeightForMode,
+  spreadsInRange,
+  scrollSlotCount,
+  storeFitMode,
+  storeViewMode,
+  type PageFitMode,
+  type ViewMode,
+} from './reader-layout';
 
-const PAGE_GAP = 16;
 const OVERSCAN = 2;
-const MAX_SCALE = 2;
-const HORIZONTAL_PADDING = 48;
 
 type PanelId = 'contents' | 'search' | 'bookmarks' | 'notes';
 
@@ -48,11 +60,15 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [base, setBase] = useState<PageGeometry | null>(null);
   const [containerWidth, setContainerWidth] = useState(0);
+  const [containerHeight, setContainerHeight] = useState(0);
+  const [viewMode, setViewMode] = useState<ViewMode>(() => loadStoredViewMode());
+  const [fitMode, setFitMode] = useState<PageFitMode>(() => loadStoredFitMode());
   const [currentPage, setCurrentPage] = useState(location.pageNumber);
   const [pageInput, setPageInput] = useState(String(location.pageNumber));
   const [activePanel, setActivePanel] = useState<PanelId | null>(null);
   const [selection, setSelection] = useState<SelectionHighlight | null>(null);
   const restoredRef = useRef(false);
+  const layoutChangeRef = useRef(false);
 
   useEffect(() => {
     restoredRef.current = false;
@@ -63,28 +79,42 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
-    const measure = () => setContainerWidth(el.clientWidth);
+    const measure = () => {
+      setContainerWidth(el.clientWidth);
+      setContainerHeight(el.clientHeight);
+    };
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(el);
     return () => observer.disconnect();
-  }, [status, activePanel]);
+  }, [status, activePanel, viewMode]);
 
   const scale = useMemo(() => {
     if (!base || containerWidth === 0) return 1;
-    const usable = Math.max(containerWidth - HORIZONTAL_PADDING, 240);
-    return Math.min(usable / base.width, MAX_SCALE);
-  }, [base, containerWidth]);
+    return computePageScale(
+      base,
+      containerWidth,
+      containerHeight,
+      fitMode,
+      viewMode,
+    );
+  }, [base, containerWidth, containerHeight, fitMode, viewMode]);
 
   const pageWidth = base ? base.width * scale : 0;
   const pageHeight = base ? base.height * scale : 0;
-  const slotHeight = pageHeight + PAGE_GAP;
   const pageCount = doc?.metadata.pageCount ?? 0;
+  const slotHeight = slotHeightForMode(viewMode, pageHeight, containerHeight);
+  const scrollSlots = scrollSlotCount(pageCount, viewMode);
 
-  const { range, totalHeight, offsetForPage, pageAtScroll, onScroll } = useVirtualPages(
-    pageCount,
+  const { range, totalHeight, onScroll } = useVirtualPages(
+    scrollSlots,
     slotHeight,
     OVERSCAN,
+  );
+
+  const layoutOffsetForPageNumber = useCallback(
+    (pageNumber: number) => layoutOffsetForPage(pageNumber, viewMode, slotHeight),
+    [viewMode, slotHeight],
   );
 
   const highlightsByPage = useMemo(() => {
@@ -111,9 +141,9 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
       const el = scrollRef.current;
       if (!el || slotHeight <= 0) return;
       const target = Math.min(Math.max(page, 1), Math.max(pageCount, 1));
-      el.scrollTo({ top: offsetForPage(target), behavior: 'auto' });
+      el.scrollTo({ top: layoutOffsetForPageNumber(target), behavior: 'auto' });
     },
-    [offsetForPage, slotHeight, pageCount],
+    [layoutOffsetForPageNumber, slotHeight, pageCount],
   );
 
   useEffect(() => {
@@ -121,27 +151,77 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
     const el = scrollRef.current;
     if (!el) return;
     const page = Math.min(Math.max(location.pageNumber, 1), pageCount);
-    el.scrollTop = offsetForPage(page) + location.yOffset * slotHeight;
+    if (viewMode === 'continuous') {
+      el.scrollTop =
+        layoutOffsetForPageNumber(page) + location.yOffset * slotHeight;
+    } else {
+      el.scrollTop = layoutOffsetForPageNumber(page);
+    }
     onScroll(el.scrollTop, el.clientHeight);
     setCurrentPage(page);
     setPageInput(String(page));
     restoredRef.current = true;
-  }, [base, slotHeight, pageCount, location, offsetForPage, onScroll]);
+  }, [
+    base,
+    slotHeight,
+    pageCount,
+    location,
+    layoutOffsetForPageNumber,
+    onScroll,
+    viewMode,
+  ]);
+
+  useEffect(() => {
+    if (!layoutChangeRef.current || slotHeight <= 0) return;
+    layoutChangeRef.current = false;
+    goToPage(currentPage);
+  }, [viewMode, fitMode, slotHeight, goToPage, currentPage]);
+
+  const handleViewModeChange = useCallback((mode: ViewMode) => {
+    layoutChangeRef.current = true;
+    storeViewMode(mode);
+    setViewMode(mode);
+  }, []);
+
+  const handleFitModeChange = useCallback((mode: PageFitMode) => {
+    layoutChangeRef.current = true;
+    storeFitMode(mode);
+    setFitMode(mode);
+  }, []);
 
   const handleScroll = useCallback(() => {
     const el = scrollRef.current;
     if (!el || !restoredRef.current) return;
     setSelection(null);
     onScroll(el.scrollTop, el.clientHeight);
-    const page = pageAtScroll(el.scrollTop, el.clientHeight);
-    const yOffset = Math.min(
-      Math.max((el.scrollTop - offsetForPage(page)) / slotHeight, 0),
-      1,
+    const page = layoutPageAtScroll(
+      el.scrollTop,
+      el.clientHeight,
+      pageCount,
+      viewMode,
+      slotHeight,
+      el.clientWidth,
+      pageWidth,
     );
+    const yOffset =
+      viewMode === 'continuous'
+        ? Math.min(
+            Math.max((el.scrollTop - layoutOffsetForPageNumber(page)) / slotHeight, 0),
+            1,
+          )
+        : 0;
     setCurrentPage(page);
     setPageInput(String(page));
     updateLocation({ pageNumber: page, yOffset });
-  }, [onScroll, pageAtScroll, offsetForPage, slotHeight, updateLocation]);
+  }, [
+    onScroll,
+    pageCount,
+    viewMode,
+    slotHeight,
+    pageWidth,
+    layoutOffsetForPageNumber,
+    updateLocation,
+  ]);
 
   const handlePointerUp = useCallback(() => {
     const el = scrollRef.current;
@@ -218,6 +298,16 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
 
   const pages: number[] = [];
   for (let page = range.start; page <= range.end; page += 1) pages.push(page);
+
+  const spreads =
+    viewMode === 'double'
+      ? spreadsInRange(range.start, range.end, pageCount, slotHeight)
+      : [];
+
+  const viewportClassName =
+    viewMode === 'continuous'
+      ? 'reader__viewport'
+      : 'reader__viewport reader__viewport--paginated';
 
   return (
     <div className="reader">
@@ -318,25 +408,86 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
 
       <div className="reader__body">
         <div
-          className="reader__viewport"
+          className={viewportClassName}
           ref={scrollRef}
           onScroll={handleScroll}
           onMouseUp={handlePointerUp}
         >
           {base ? (
             <div className="reader__pages" style={{ height: totalHeight }}>
-              {pages.map((page) => (
-                <PageCanvas
-                  key={page}
-                  doc={doc}
-                  pageNumber={page}
-                  scale={scale}
-                  width={pageWidth}
-                  height={pageHeight}
-                  top={offsetForPage(page)}
-                  highlights={highlightsByPage.get(page) ?? []}
-                />
-              ))}
+              {viewMode === 'continuous' &&
+                pages.map((page) => (
+                  <PageCanvas
+                    key={page}
+                    doc={doc}
+                    pageNumber={page}
+                    scale={scale}
+                    width={pageWidth}
+                    height={pageHeight}
+                    top={layoutOffsetForPageNumber(page)}
+                    highlights={highlightsByPage.get(page) ?? []}
+                  />
+                ))}
+
+              {viewMode === 'single' &&
+                pages.map((page) => (
+                  <div
+                    key={page}
+                    className="reader-slot reader-slot--single"
+                    style={{
+                      top: layoutOffsetForPageNumber(page),
+                      height: slotHeight,
+                    }}
+                  >
+                    <PageCanvas
+                      doc={doc}
+                      pageNumber={page}
+                      scale={scale}
+                      width={pageWidth}
+                      height={pageHeight}
+                      inline
+                      highlights={highlightsByPage.get(page) ?? []}
+                    />
+                  </div>
+                ))}
+
+              {viewMode === 'double' &&
+                spreads.map((spread) => (
+                  <div
+                    key={spread.index}
+                    className="reader-slot reader-slot--double"
+                    style={{ top: spread.top, height: slotHeight }}
+                  >
+                    <div className="reader-spread">
+                      <PageCanvas
+                        doc={doc}
+                        pageNumber={spread.leftPage}
+                        scale={scale}
+                        width={pageWidth}
+                        height={pageHeight}
+                        inline
+                        highlights={highlightsByPage.get(spread.leftPage) ?? []}
+                      />
+                      {spread.rightPage ? (
+                        <PageCanvas
+                          doc={doc}
+                          pageNumber={spread.rightPage}
+                          scale={scale}
+                          width={pageWidth}
+                          height={pageHeight}
+                          inline
+                          highlights={highlightsByPage.get(spread.rightPage) ?? []}
+                        />
+                      ) : (
+                        <div
+                          className="reader-spread__blank"
+                          style={{ width: pageWidth, height: pageHeight }}
+                          aria-hidden
+                        />
+                      )}
+                    </div>
+                  </div>
+                ))}
             </div>
           ) : (
             <div className="reader-status">Preparing document…</div>
@@ -372,6 +523,13 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
           </aside>
         )}
       </div>
+
+      <ReaderBottomBar
+        fitMode={fitMode}
+        viewMode={viewMode}
+        onFitModeChange={handleFitModeChange}
+        onViewModeChange={handleViewModeChange}
+      />
 
       {selection && (
         <button
