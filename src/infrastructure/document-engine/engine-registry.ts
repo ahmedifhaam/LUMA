@@ -4,6 +4,8 @@ import { pdfEngine } from '@/infrastructure/document-engine/pdfjs/pdf-engine';
 
 export type DocumentFormat = 'pdf' | 'epub';
 
+import { IMPORT_FILE_ACCEPT } from '@/infrastructure/document-source/file-source';
+
 const EPUB_MIME = 'application/epub+zip';
 
 export function detectDocumentFormat(
@@ -35,7 +37,7 @@ export function engineForSource(bytes: ArrayBuffer, fileName?: string): Document
 }
 
 export function mimeTypesForImport(): string {
-  return `application/pdf,.pdf,${EPUB_MIME},.epub`;
+  return IMPORT_FILE_ACCEPT;
 }
 
 export { EPUB_MIME };

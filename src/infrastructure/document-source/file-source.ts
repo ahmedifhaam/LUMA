@@ -6,6 +6,14 @@
  * local file; browser-persistent copies are stored separately for offline reopen.
  */
 
+/**
+ * File-picker filter for PDF and EPUB.
+ * Include both MIME types and extensions — extension-only `.epub` is ignored on
+ * some platforms (notably Windows Chrome), which hides EPUB files in the dialog.
+ */
+export const IMPORT_FILE_ACCEPT =
+  'application/pdf,.pdf,application/epub+zip,.epub';
+
 export interface SelectedSource {
   name: string;
   bytes: ArrayBuffer;

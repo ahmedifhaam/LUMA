@@ -11,6 +11,7 @@ import { SearchPanel } from './panels/SearchPanel';
 import { BookmarksPanel } from './panels/BookmarksPanel';
 import { NotesPanel } from './panels/NotesPanel';
 import { useReaderShortcuts } from './useReaderShortcuts';
+import { isEditableTarget } from './reader-shortcuts';
 
 const PAGE_GAP = 16;
 const OVERSCAN = 2;
@@ -28,9 +29,10 @@ const PANELS: { id: PanelId; label: string; icon: string }[] = [
 
 interface ReaderViewProps {
   onExit: () => void;
+  onOpenShortcuts: () => void;
 }
 
-export function ReaderView({ onExit }: ReaderViewProps) {
+export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
   const status = useReaderStore((s) => s.status);
   const book = useReaderStore((s) => s.book);
   const doc = useReaderStore((s) => s.doc);
@@ -186,6 +188,18 @@ export function ReaderView({ onExit }: ReaderViewProps) {
     onClearSelection: clearSelection,
   });
 
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== '?' || event.ctrlKey || event.metaKey || event.altKey) return;
+      if (isEditableTarget(event.target)) return;
+      event.preventDefault();
+      onOpenShortcuts();
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onOpenShortcuts]);
+
   if (status === 'opening') {
     return <div className="reader-status">Opening book…</div>;
   }
@@ -262,6 +276,15 @@ export function ReaderView({ onExit }: ReaderViewProps) {
         </div>
 
         <div className="reader__panel-tabs">
+          <button
+            className="btn btn--icon"
+            aria-label="Keyboard shortcuts"
+            title="Keyboard shortcuts (?)"
+            data-testid="open-shortcuts"
+            onClick={onOpenShortcuts}
+          >
+            ?
+          </button>
           {PANELS.map((panel) => (
             <button
               key={panel.id}

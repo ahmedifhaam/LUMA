@@ -93,3 +93,45 @@ export function pageForShortcut(
       return null;
   }
 }
+
+export interface ShortcutHelpEntry {
+  keys: string[];
+  description: string;
+}
+
+export interface ShortcutHelpGroup {
+  title: string;
+  shortcuts: ShortcutHelpEntry[];
+}
+
+/** Reference list for the keyboard shortcuts help page (keep in sync with resolveReaderShortcut). */
+export const READER_SHORTCUT_HELP: ShortcutHelpGroup[] = [
+  {
+    title: 'Navigation',
+    shortcuts: [
+      { keys: ['←', '→'], description: 'Previous / next page' },
+      { keys: ['Page Up', 'Page Down'], description: 'Previous / next page' },
+      { keys: ['Space'], description: 'Next page' },
+      { keys: ['Home'], description: 'First page' },
+      { keys: ['End'], description: 'Last page' },
+    ],
+  },
+  {
+    title: 'Bookmarks',
+    shortcuts: [{ keys: ['B'], description: 'Toggle bookmark on the current page' }],
+  },
+  {
+    title: 'Search',
+    shortcuts: [
+      { keys: ['/'], description: 'Open search panel' },
+      { keys: ['Ctrl+F', '⌘F'], description: 'Open search panel' },
+    ],
+  },
+  {
+    title: 'Panels & selection',
+    shortcuts: [
+      { keys: ['Esc'], description: 'Close the open panel or clear text selection' },
+      { keys: ['?'], description: 'Open this shortcuts reference' },
+    ],
+  },
+];
