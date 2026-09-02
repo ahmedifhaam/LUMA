@@ -5,7 +5,10 @@ import type {
   DocumentOutlineItem,
   OpenDocument,
 } from '@/domain/document/types';
-import { pdfEngine } from '@/infrastructure/document-engine/pdfjs/pdf-engine';
+import {
+  engineForFormat,
+  engineForSource,
+} from '@/infrastructure/document-engine/engine-registry';
 import {
   bookRepository,
   readingStateRepository,
@@ -70,7 +73,9 @@ export const useReaderStore = create<ReaderState>((set, get) => ({
         throw new Error('This book has no locally stored copy. Re-import the file.');
       }
 
-      const doc = await pdfEngine.open(source.bytes);
+      const doc = book.format
+        ? await engineForFormat(book.format).open(source.bytes)
+        : await engineForSource(source.bytes, book.sourceName).open(source.bytes);
       const location = reading?.location ?? { pageNumber: 1, yOffset: 0 };
       const outline = await doc.getOutline().catch(() => []);
 
