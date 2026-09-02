@@ -31,6 +31,17 @@ test.describe('reader navigation', () => {
     await expect(page.getByRole('heading', { name: 'My Library' })).toBeVisible();
     await captureStep(page, 'reader-back-to-library');
   });
+
+  test('switches layout modes from the bottom bar', async ({ page }) => {
+    const bottomBar = page.getByTestId('reader-bottom-bar');
+    await expect(bottomBar).toBeVisible();
+    await bottomBar.getByTestId('view-mode-single').click();
+    await expect(page.locator('.reader__viewport--paginated')).toBeVisible();
+    await bottomBar.getByTestId('view-mode-double').click();
+    await expect(page.locator('.reader-slot--double').first()).toBeVisible();
+    await bottomBar.getByRole('button', { name: 'Fit screen' }).click();
+    await captureStep(page, 'reader-layout-bottom-bar');
+  });
 });
 
 test.describe('reader keyboard shortcuts', () => {
