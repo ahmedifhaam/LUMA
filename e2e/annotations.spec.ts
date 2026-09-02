@@ -53,4 +53,33 @@ test.describe('annotations', () => {
     await expect(highlight).toBeVisible();
     await captureStep(page, 'annotations-epub-highlight');
   });
+
+  test('keeps EPUB highlights visible after increasing text size', async ({ page }) => {
+    await importBook(page, FIXTURE_FILES.sampleEpub);
+    await openFirstBook(page);
+    await waitForReaderReady(page);
+
+    const paragraph = page.locator('.epub-chapter-body p').first();
+    await paragraph.scrollIntoViewIfNeeded();
+    const box = await paragraph.boundingBox();
+    if (!box) throw new Error('EPUB paragraph not visible');
+
+    await page.mouse.move(box.x + 8, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width - 8, box.y + box.height / 2);
+    await page.mouse.up();
+
+    await page.getByRole('button', { name: 'Highlight' }).click();
+    const highlight = page.locator('.epub-chapter .epub-highlights .page-highlight');
+    await expect(highlight).toBeVisible({ timeout: 5_000 });
+
+    await page.getByTestId('text-larger').click();
+    await page.getByTestId('text-larger').click();
+    await expect(
+      page.locator('.epub-chapter .epub-highlights .page-highlight').first(),
+    ).toBeVisible({ timeout: 5_000 });
+    await expect(
+      page.locator('.epub-chapter .epub-highlights .page-highlight'),
+    ).not.toHaveCount(0);
+  });
 });

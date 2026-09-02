@@ -547,7 +547,9 @@ body {
   pointer-events: none;
   z-index: 2;
 }
-.epub-chapter img {
+.epub-chapter-body {
+  position: relative;
+}
   max-width: 100%;
   height: auto;
 }

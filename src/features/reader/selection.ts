@@ -40,10 +40,11 @@ export function measureContextForSlot(slot: HTMLElement): SelectionMeasureContex
   const layer = slot.querySelector('.epub-text-layer') as HTMLElement | null;
 
   if (chapter && layer) {
+    const content = chapter.querySelector('.epub-chapter-body') ?? chapter;
     const layerRect = layer.getBoundingClientRect();
     return {
       kind: 'epub',
-      width: chapter.scrollWidth,
+      width: content.scrollWidth,
       height: chapter.scrollHeight,
       scrollLeft: layer.scrollLeft,
       scrollTop: layer.scrollTop,

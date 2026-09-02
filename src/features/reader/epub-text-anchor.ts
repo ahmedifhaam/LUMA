@@ -4,28 +4,34 @@ export interface TextAnchor {
   end: number;
 }
 
+export function getChapterContentRoot(chapter: HTMLElement): HTMLElement {
+  const body = chapter.querySelector('.epub-chapter-body');
+  return (body ?? chapter) as HTMLElement;
+}
+
 export function textOffsetForPoint(
   root: HTMLElement,
   container: Node,
   offset: number,
 ): number {
   if (!root.contains(container)) return -1;
-  const probe = document.createRange();
-  probe.selectNodeContents(root);
+  const range = document.createRange();
+  range.selectNodeContents(root);
   try {
-    probe.setEnd(container, offset);
+    range.setEnd(container, offset);
   } catch {
     return -1;
   }
-  return probe.toString().length;
+  return range.cloneContents().textContent?.length ?? -1;
 }
 
 export function textAnchorFromRange(
   chapter: HTMLElement,
   range: Range,
 ): TextAnchor | null {
-  const start = textOffsetForPoint(chapter, range.startContainer, range.startOffset);
-  const end = textOffsetForPoint(chapter, range.endContainer, range.endOffset);
+  const root = getChapterContentRoot(chapter);
+  const start = textOffsetForPoint(root, range.startContainer, range.startOffset);
+  const end = textOffsetForPoint(root, range.endContainer, range.endOffset);
   if (start < 0 || end < 0 || end <= start) return null;
   return { start, end };
 }
@@ -51,13 +57,14 @@ export function rangeFromTextAnchor(
   chapter: HTMLElement,
   anchor: TextAnchor,
 ): Range | null {
-  const textLength = chapter.textContent?.length ?? 0;
+  const root = getChapterContentRoot(chapter);
+  const textLength = root.textContent?.length ?? 0;
   if (anchor.start < 0 || anchor.end <= anchor.start || anchor.end > textLength) {
     return null;
   }
 
-  const startPos = locateTextPosition(chapter, anchor.start);
-  const endPos = locateTextPosition(chapter, anchor.end);
+  const startPos = locateTextPosition(root, anchor.start);
+  const endPos = locateTextPosition(root, anchor.end);
   if (!startPos || !endPos) return null;
 
   const range = document.createRange();
@@ -82,7 +89,8 @@ export function textAnchorFromQuote(
   quote: string,
   hintFraction = 0,
 ): TextAnchor | null {
-  const text = chapter.textContent ?? '';
+  const root = getChapterContentRoot(chapter);
+  const text = root.textContent ?? '';
   const hint = Math.floor(
     Math.min(Math.max(hintFraction, 0), 1) * Math.max(text.length - 1, 0),
   );

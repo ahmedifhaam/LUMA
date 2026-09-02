@@ -13,7 +13,7 @@ describe('epub-text-anchor', () => {
     chapter = document.createElement('div');
     chapter.className = 'epub-chapter';
     chapter.innerHTML =
-      '<p>First paragraph with some text.</p><p>Second paragraph for highlighting.</p>';
+      '<div class="epub-chapter-body"><p>First paragraph with some text.</p><p>Second paragraph for highlighting.</p></div>';
     document.body.appendChild(chapter);
   });
 

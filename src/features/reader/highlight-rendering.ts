@@ -5,6 +5,8 @@ import {
   textAnchorFromQuote,
 } from './epub-text-anchor';
 
+const MAX_SYNC_ATTEMPTS = 12;
+
 function resolveTextAnchor(
   chapter: HTMLElement,
   highlight: Annotation,
@@ -23,9 +25,13 @@ function resolveTextAnchor(
   return null;
 }
 
-export function syncEpubHighlights(textLayer: HTMLElement, highlights: Annotation[]): void {
+function countRenderedHighlights(overlay: Element | null): number {
+  return overlay?.querySelectorAll('.page-highlight').length ?? 0;
+}
+
+export function syncEpubHighlights(textLayer: HTMLElement, highlights: Annotation[]): boolean {
   const chapter = textLayer.querySelector('.epub-chapter') as HTMLElement | null;
-  if (!chapter) return;
+  if (!chapter) return false;
 
   let overlay = chapter.querySelector('.epub-highlights');
   if (!overlay) {
@@ -65,6 +71,31 @@ export function syncEpubHighlights(textLayer: HTMLElement, highlights: Annotatio
       overlay.appendChild(node);
     }
   }
+
+  if (highlights.length === 0) return true;
+  return countRenderedHighlights(overlay) > 0;
+}
+
+export function scheduleEpubHighlightSync(
+  textLayer: HTMLElement,
+  highlights: Annotation[],
+  attempt = 0,
+): void {
+  const run = () => {
+    const rendered = syncEpubHighlights(textLayer, highlights);
+    if (!rendered && attempt < MAX_SYNC_ATTEMPTS) {
+      scheduleEpubHighlightSync(textLayer, highlights, attempt + 1);
+    }
+  };
+
+  if (attempt === 0 && document.fonts?.ready) {
+    void document.fonts.ready.then(() => {
+      requestAnimationFrame(run);
+    });
+    return;
+  }
+
+  requestAnimationFrame(run);
 }
 
 export function clearEpubHighlights(textLayer: HTMLElement): void {
