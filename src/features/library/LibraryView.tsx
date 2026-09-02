@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReadingState } from '@/domain/book/types';
 import { useLibraryStore } from '@/application/library/library-store';
+import { mimeTypesForImport } from '@/infrastructure/document-engine/engine-registry';
 import { readingStateRepository } from '@/infrastructure/persistence/repositories';
 
 interface LibraryViewProps {
@@ -85,7 +86,7 @@ export function LibraryView({ onOpenBook }: LibraryViewProps) {
         <input
           ref={fileInputRef}
           type="file"
-          accept="application/pdf,.pdf"
+          accept={mimeTypesForImport()}
           multiple
           hidden
           data-testid="file-input"
@@ -130,7 +131,7 @@ export function LibraryView({ onOpenBook }: LibraryViewProps) {
         ) : books.length === 0 ? (
           <div className="library__empty">
             <p>No books yet.</p>
-            <p>Click “Add Book” and choose a local PDF to start reading.</p>
+            <p>Click “Add Book” and choose a local PDF or EPUB to start reading.</p>
           </div>
         ) : (
           <ul className="book-grid">
