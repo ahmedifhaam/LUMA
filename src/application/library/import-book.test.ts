@@ -2,21 +2,17 @@ import { File } from 'node:buffer';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { DocumentEngine, OpenDocument } from '@/domain/document/types';
 import { computeFingerprint } from '@/application/document-identity/fingerprint';
-import { DB_NAME, closeDatabase } from '@/infrastructure/persistence/db';
+import { closeDatabase } from '@/infrastructure/persistence/db';
 import {
   bookRepository,
   sourceRepository,
 } from '@/infrastructure/persistence/repositories';
+import { useIsolatedTestDatabase } from '@/tests/isolated-db';
 import { importBook } from './import-book';
 
-async function deleteDatabase(): Promise<void> {
+async function resetTestDatabase(): Promise<void> {
+  useIsolatedTestDatabase();
   await closeDatabase();
-  await new Promise<void>((resolve, reject) => {
-    const request = indexedDB.deleteDatabase(DB_NAME);
-    request.onsuccess = () => resolve();
-    request.onerror = () => reject(request.error);
-    request.onblocked = () => resolve();
-  });
 }
 
 function makeFakeEngine(pageCount: number, hasText: boolean): DocumentEngine {
@@ -50,7 +46,7 @@ function pdfFile(content: string, name: string): globalThis.File {
 
 describe('importBook', () => {
   beforeEach(async () => {
-    await deleteDatabase();
+    await resetTestDatabase();
   });
 
   it('creates a new logical book and persists its source', async () => {
@@ -65,6 +61,8 @@ describe('importBook', () => {
     expect(result.book.pageCount).toBe(12);
     expect(result.book.format).toBe('pdf');
     expect(result.book.coverThumbnail).toBe('data:image/jpeg;base64,thumb');
+    expect(result.book.source).toBe('local');
+    expect(result.book.sourceRef).toEqual({ fileName: 'Hello.pdf' });
 
     const stored = await bookRepository.get(result.book.id);
     expect(stored).toBeTruthy();

@@ -41,6 +41,18 @@ export default defineConfig({
         trace: 'on',
       },
     },
+    {
+      name: 'feature-guide',
+      testMatch: /feature-guide\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        channel: 'chrome',
+        video: 'on',
+        screenshot: 'off',
+        trace: 'on',
+        viewport: { width: 1280, height: 800 },
+      },
+    },
   ],
   webServer: {
     command: 'npm run dev',

@@ -31,7 +31,7 @@ The broader opportunity is not simply faster PDF rendering. The product should h
 
 ### Maturity Notes
 
-No capability is currently known to be implemented or verified. Phase 1 product behaviour has now been specified sufficiently to begin implementation. Phase 2 remains at proposed/draft specification maturity.
+Phase 1 local reading foundation is **implemented and released as v1.0**. Phase 1.5 and Phase 2 are **proposed**; Phase 2 continuity model was revised 2026-09-02 (cloud-backed sources, auth-gated paid features).
 
 ## Current Decisions
 
@@ -42,11 +42,15 @@ No capability is currently known to be implemented or verified. Phase 1 product 
 
 ## Current Scope Direction
 
-Phase 1 is now the implementation foundation: local multi-book reading, large-document performance, local search/annotations, and persistent reading state.
+Phase 1 is the implementation foundation: local multi-book reading, large-document performance, local search/annotations, and persistent reading state. **v1.0 shipped** with PDF and EPUB support.
 
-Phase 2 is intended to add synchronization and cross-device continuity without making the backend a prerequisite for reading.
+**Phase 1.5 (proposed next):** book source model, per-device reading state, and library source icons — still no backend.
 
-Cloud storage of book content, AI-assisted understanding, and deeper cross-book knowledge capabilities remain future directions.
+**Phase 2 (revised):** optional login, cloud book sources, and cross-device continuity for users who opt in. Free tier remains local-only forever. See [[Decision - Continuity via Cloud-Backed Sources]].
+
+Phase 2+ adds annotation sync, more connectors, and optional state-only sync for power users.
+
+Cloud storage of book content, AI-assisted understanding, and deeper cross-book knowledge capabilities remain future directions beyond Phase 2 MVP.
 
 ## Open Questions
 

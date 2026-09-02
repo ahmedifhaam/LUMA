@@ -19,6 +19,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:tour": "playwright test --project=feature-tour",
+    "test:feature-guide": "playwright test --project=feature-guide",
     "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {

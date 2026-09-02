@@ -9,6 +9,8 @@ import {
   engineForFormat,
   engineForSource,
 } from '@/infrastructure/document-engine/engine-registry';
+import { getDeviceId } from '@/infrastructure/device/device-id';
+import { createReadingState } from '@/infrastructure/persistence/reading-state-id';
 import {
   bookRepository,
   readingStateRepository,
@@ -62,10 +64,11 @@ export const useReaderStore = create<ReaderState>((set, get) => ({
     set({ status: 'opening', book: null, doc: null, outline: [], error: null });
 
     try {
+      const deviceId = getDeviceId();
       const [book, source, reading] = await Promise.all([
         bookRepository.get(bookId),
         sourceRepository.get(bookId),
-        readingStateRepository.get(bookId),
+        readingStateRepository.get(bookId, deviceId),
       ]);
 
       if (!book) throw new Error('Book not found in library');
@@ -78,8 +81,20 @@ export const useReaderStore = create<ReaderState>((set, get) => ({
         : await engineForSource(source.bytes, book.sourceName).open(source.bytes);
       const location = reading?.location ?? { pageNumber: 1, yOffset: 0 };
       const outline = await doc.getOutline().catch(() => []);
+      const progress = progressFor(location, doc.metadata.pageCount);
+      const now = Date.now();
 
-      await bookRepository.save({ ...book, lastOpenedAt: Date.now() });
+      await Promise.all([
+        bookRepository.save({ ...book, lastOpenedAt: now }),
+        readingStateRepository.save(
+          createReadingState(bookId, deviceId, {
+            location,
+            progress,
+            lastOpenedAt: now,
+            updatedAt: now,
+          }),
+        ),
+      ]);
 
       set({
         status: 'ready',
@@ -87,7 +102,7 @@ export const useReaderStore = create<ReaderState>((set, get) => ({
         doc,
         outline,
         location,
-        progress: progressFor(location, doc.metadata.pageCount),
+        progress,
         error: null,
       });
 
@@ -128,12 +143,14 @@ export const useReaderStore = create<ReaderState>((set, get) => ({
   async flushReadingState() {
     const { book, location, progress } = get();
     if (!book) return;
-    const state: ReadingState = {
-      bookId: book.id,
+    const deviceId = getDeviceId();
+    const now = Date.now();
+    const state: ReadingState = createReadingState(book.id, deviceId, {
       location,
       progress,
-      updatedAt: Date.now(),
-    };
+      lastOpenedAt: now,
+      updatedAt: now,
+    });
     await readingStateRepository.save(state).catch(() => undefined);
   },
 }));
