@@ -19,6 +19,43 @@ test.describe('library', () => {
     await captureStep(page, 'library-imported-pdf');
   });
 
+  test('shows local source icon on imported book card', async ({ page }) => {
+    await importBook(page, FIXTURE_FILES.samplePdf);
+    await expect(page.getByTestId('book-source-local')).toBeVisible();
+    await captureStep(page, 'library-source-icon');
+  });
+
+  test('maintains independent reading state per device id', async ({ page }) => {
+    await importBook(page, FIXTURE_FILES.samplePdf);
+
+    const originalDeviceId = await page.evaluate(() =>
+      localStorage.getItem('luma-device-id'),
+    );
+    expect(originalDeviceId).toBeTruthy();
+
+    await openFirstBook(page);
+    await page.getByLabel('Go to page').fill('5');
+    await page.getByLabel('Go to page').press('Enter');
+    await expect(page.getByLabel('Go to page')).toHaveValue('5');
+    await page.getByRole('button', { name: 'Back to library' }).click();
+
+    await page.evaluate(() => {
+      localStorage.setItem('luma-device-id', crypto.randomUUID());
+    });
+    await page.getByRole('button', { name: 'Open', exact: true }).first().click();
+    await page.getByRole('button', { name: 'Back to library' }).waitFor({ timeout: 30_000 });
+    await expect(page.getByLabel('Go to page')).toHaveValue('1');
+    await page.getByRole('button', { name: 'Back to library' }).click();
+
+    await page.evaluate((deviceId) => {
+      localStorage.setItem('luma-device-id', deviceId);
+    }, originalDeviceId!);
+    await page.getByRole('button', { name: 'Open', exact: true }).first().click();
+    await page.getByRole('button', { name: 'Back to library' }).waitFor({ timeout: 30_000 });
+    await expect(page.getByLabel('Go to page')).toHaveValue('5');
+    await captureStep(page, 'library-per-device-state');
+  });
+
   test('shows a cover thumbnail for imported PDFs', async ({ page }) => {
     await importBook(page, FIXTURE_FILES.samplePdf);
     const cover = page.locator('.book-card__image').first();

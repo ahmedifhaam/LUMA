@@ -375,7 +375,7 @@ Initial policy:
 5. Prefer the greatest `lastActivityAt` among valid candidates.
 6. Do not automatically overwrite the current device's local position.
 
-The "recent" threshold should be configurable at the application layer.
+The "recent" threshold should be configurable at the application layer. Client default: **7 days** (`src/infrastructure/sync/continuation.ts`).
 
 ## 17. Continuation UX Requirements
 
@@ -692,6 +692,19 @@ The implementation may normalize or denormalize these records as appropriate.
 - offline read then reconnect;
 - verify no regression to Phase 1 behaviour.
 
+## 28.1 Client Contracts (Phase 1.5)
+
+Phase 2 client-side API contracts are implemented on `v1.0` (stub backends only; no hosting yet):
+
+| Concern | Location | Notes |
+|---------|----------|-------|
+| **Auth** | `src/infrastructure/auth/` | `AuthService` interface; `LocalAuthStub` when cloud disabled |
+| **Sync state** | `src/infrastructure/sync/` | `SyncStateService` interface; `ReadingLocationEnvelope`; `LocalSyncStub` when cloud disabled |
+| **Continuation logic** | `src/infrastructure/sync/continuation.ts` | Pure `findContinuationOffer()` — 7-day window, different device, different position |
+| **Book source connectors** | `src/infrastructure/book-source/` | `BookSourceConnector` interface; empty registry when cloud disabled |
+
+Feature flag: `VITE_CLOUD_ENABLED=true` (default off). Document byte resolution remains in `src/infrastructure/document-source/`.
+
 ## 29. Implementation Readiness
 
 The product-level decisions required to begin implementation are now established:
@@ -716,7 +729,7 @@ The following remain implementation choices rather than product-definition block
 - exact API URLs/transport;
 - token persistence mechanism;
 - retention policy;
-- recent-session threshold;
+- recent-session threshold (client default: 7 days);
 - device naming details;
 - provider-specific content-version implementation;
 - retry/backoff constants.
@@ -738,4 +751,5 @@ Highlights and notes require a separate specification for creation, edit, deleti
 
 ## Revision History
 
-- **2026-09-02:** Promoted from draft to implementation-ready Phase 2 MVP specification. Added local-first invariants, identity model, source contract, reading-location model, reading sessions, per-device tracks, sync queue/cursor semantics, push/pull behaviour, conflict and continuation policy, Google Drive boundary, authentication/security rules, data boundary, content-version handling, API direction, backend model, acceptance criteria, and test plan.
+- **2026-09-02 (sync):** Merged Phase 1.5 completion from `v1.0`; added §28.1 Client Contracts referencing shipped stub implementations.
+- **2026-09-02:** Promoted from draft to implementation-ready Phase 2 MVP specification.

@@ -658,7 +658,7 @@ The following should be resolved during implementation without changing the prod
 - Token/session persistence strategy.
 - Database schema and migration strategy.
 - Sync retention policy.
-- Recent-session threshold.
+- Recent-session threshold (client default: 7 days in `src/infrastructure/sync/continuation.ts`).
 - Device naming UX.
 - Content-version strategy per format/provider.
 - Cloud source caching policy.
@@ -685,4 +685,5 @@ Annotation synchronization must be specified separately because highlight and no
 
 ## Revision History
 
+- **2026-09-02 (sync):** Merged Phase 1.5 completion from `v1.0` — client contract stubs shipped; 7-day continuation default documented.
 - **2026-09-02:** Expanded from product-level proposal into implementation-oriented Phase 2 plan. Defined cloud-backed continuity as the primary path, local-first invariants, source/account/device identity, reading-location/session models, sync architecture, queue/cursor semantics, conflict policy, Google Drive connector boundary, backend contract direction, security requirements, failure behaviour, testing strategy, milestones, and exit criteria.
