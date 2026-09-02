@@ -63,6 +63,7 @@ describe('importBook', () => {
     expect(result.isDuplicate).toBe(false);
     expect(result.book.title).toBe('Hello');
     expect(result.book.pageCount).toBe(12);
+    expect(result.book.format).toBe('pdf');
     expect(result.book.coverThumbnail).toBe('data:image/jpeg;base64,thumb');
 
     const stored = await bookRepository.get(result.book.id);

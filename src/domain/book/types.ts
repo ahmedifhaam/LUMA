@@ -1,5 +1,7 @@
 import type { DocumentLocation } from '@/domain/document/types';
 
+export type BookFormat = 'pdf' | 'epub';
+
 /**
  * A logical book. Identity is the document content fingerprint, so re-importing
  * the same content (even under a different filename) resolves to the same book
@@ -13,6 +15,8 @@ export interface Book {
   pageCount: number;
   byteLength: number;
   hasText: boolean;
+  /** Document format; omitted on books imported before format tracking. */
+  format?: BookFormat;
   /** Most recent filename this content was imported under (informational only). */
   sourceName: string;
   createdAt: number;
