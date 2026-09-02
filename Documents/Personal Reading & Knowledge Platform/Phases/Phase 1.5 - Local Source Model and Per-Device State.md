@@ -1,7 +1,7 @@
 # Phase 1.5 - Local Source Model and Per-Device State
 
 > [!summary]
-> **Status:** In progress
+> **Status:** Complete
 > **Product:** [[Product - Overview]]
 > **Depends on:** [[Phase 1 - Local Reading Foundation]]
 
@@ -37,6 +37,7 @@ Building these locally first avoids a large bang migration when auth and cloud c
 - Library UI: source badge/icon on book cards.
 - Reader: default open behaviour uses **this device's** last position for the book.
 - Document-source adapter seam extended so future connectors implement the same interface as local file import.
+- `DocumentSourceAdapter` interface with `resolveBytes(book)`; local implementation wired through `resolveBookBytes` registry in the reader.
 
 ## Explicitly Excluded
 
@@ -63,6 +64,12 @@ Building these locally first avoids a large bang migration when auth and cloud c
 
 ## Open Questions
 
-- Stable device id: `localStorage` UUID vs. derived fingerprint — prefer explicit UUID with regeneration rules.
-- Whether "Continue reading" card uses device-local or latest-opened-across-sources logic (device-local for Phase 1.5).
-- Export format for manual state backup.
+- ~~Stable device id: `localStorage` UUID vs. derived fingerprint — prefer explicit UUID with regeneration rules.~~ **Resolved:** `localStorage` key `luma-device-id` holds a generated UUID per browser installation.
+- ~~Whether "Continue reading" card uses device-local or latest-opened-across-sources logic (device-local for Phase 1.5).~~ **Resolved:** device-local via `readingStateRepository.listForDevice()`.
+- Export format for manual state backup — implemented as JSON via reading-state export/import helpers.
+
+## Revision History
+
+| Date | Change |
+|------|--------|
+| 2026-09-02 | Phase complete: source icons (grid + continue card), per-device state, document source adapter seam, unit and e2e coverage. |

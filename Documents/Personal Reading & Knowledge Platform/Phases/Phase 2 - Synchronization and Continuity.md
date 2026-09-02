@@ -123,7 +123,7 @@ Users who import the same file locally on multiple devices without cloud storage
 
 ## Suggested Implementation Order
 
-1. **API design** — client-side interfaces for auth, book sources, sync; no hosting yet.
+1. **API design** — client-side interfaces for auth, book sources, sync; no hosting yet. **Client contracts implemented** at `src/infrastructure/auth/`, `src/infrastructure/sync/`, and `src/infrastructure/book-source/` (stub implementations; gated by `VITE_CLOUD_ENABLED`).
 2. **Auth MVP** — username/password; gated routes for cloud features only.
 3. **First cloud connector** — prefer **Google Drive** before LUMA-hosted storage to reduce hosting cost and rights surface.
 4. **Position sync** — per-device + cross-device continuation for cloud-backed books.
