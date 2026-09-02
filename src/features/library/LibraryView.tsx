@@ -130,14 +130,24 @@ export function LibraryView({ onOpenBook, onOpenShortcuts }: LibraryViewProps) {
             className="continue-card"
             onClick={() => onOpenBook(continueReading.id)}
           >
-            {continueReading.coverThumbnail ? (
-              <img
-                className="continue-card__cover"
-                src={continueReading.coverThumbnail}
-                alt=""
-                aria-hidden
+            <div className="continue-card__cover-wrap">
+              <BookSourceIcon
+                source={normalizeBookSource(continueReading).source}
+                className="continue-card__source"
               />
-            ) : null}
+              {continueReading.coverThumbnail ? (
+                <img
+                  className="continue-card__cover"
+                  src={continueReading.coverThumbnail}
+                  alt=""
+                  aria-hidden
+                />
+              ) : (
+                <span className="continue-card__cover-placeholder" aria-hidden>
+                  {continueReading.title.charAt(0).toUpperCase()}
+                </span>
+              )}
+            </div>
             <div className="continue-card__info">
               <span className="continue-card__name">{continueReading.title}</span>
               <span className="continue-card__meta">

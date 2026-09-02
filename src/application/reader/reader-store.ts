@@ -11,10 +11,10 @@ import {
 } from '@/infrastructure/document-engine/engine-registry';
 import { getDeviceId } from '@/infrastructure/device/device-id';
 import { createReadingState } from '@/infrastructure/persistence/reading-state-id';
+import { resolveBookBytes } from '@/infrastructure/document-source/registry';
 import {
   bookRepository,
   readingStateRepository,
-  sourceRepository,
 } from '@/infrastructure/persistence/repositories';
 import { useAnnotationsStore } from '@/application/annotations/annotations-store';
 import { useSearchStore } from '@/application/search/search-store';
@@ -65,20 +65,17 @@ export const useReaderStore = create<ReaderState>((set, get) => ({
 
     try {
       const deviceId = getDeviceId();
-      const [book, source, reading] = await Promise.all([
+      const [book, reading] = await Promise.all([
         bookRepository.get(bookId),
-        sourceRepository.get(bookId),
         readingStateRepository.get(bookId, deviceId),
       ]);
 
       if (!book) throw new Error('Book not found in library');
-      if (!source) {
-        throw new Error('This book has no locally stored copy. Re-import the file.');
-      }
 
+      const bytes = await resolveBookBytes(book);
       const doc = book.format
-        ? await engineForFormat(book.format).open(source.bytes)
-        : await engineForSource(source.bytes, book.sourceName).open(source.bytes);
+        ? await engineForFormat(book.format).open(bytes)
+        : await engineForSource(bytes, book.sourceName).open(bytes);
       const location = reading?.location ?? { pageNumber: 1, yOffset: 0 };
       const outline = await doc.getOutline().catch(() => []);
       const progress = progressFor(location, doc.metadata.pageCount);

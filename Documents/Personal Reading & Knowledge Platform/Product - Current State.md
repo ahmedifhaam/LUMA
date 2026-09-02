@@ -3,7 +3,7 @@
 > [!summary]
 > **Status:** Candidate / Explored
 > **Product:** [[Product - Overview]]
-> **Last Updated:** 2026-09-01
+> **Last Updated:** 2026-09-02
 
 ## Current Vision
 
@@ -31,7 +31,7 @@ The broader opportunity is not simply faster PDF rendering. The product should h
 
 ### Maturity Notes
 
-Phase 1 local reading foundation is **implemented and released as v1.0**. Phase 1.5 and Phase 2 are **proposed**; Phase 2 continuity model was revised 2026-09-02 (cloud-backed sources, auth-gated paid features).
+Phase 1 local reading foundation is **implemented and released as v1.0**. **Phase 1.5 is in progress** (source model, per-device state, library source icons). Phase 2 is **proposed**; continuity model was revised 2026-09-02 (cloud-backed sources, auth-gated paid features). See [[History - Product Evolution 2026-09-02]].
 
 ## Current Decisions
 
@@ -39,12 +39,13 @@ Phase 1 local reading foundation is **implemented and released as v1.0**. Phase 
 - [[Decision - Book as the Core Product Object]]
 - [[Decision - Git-Like Synchronizable Local State]]
 - [[Decision - Cloud as an Extension of Local Reading]]
+- [[Decision - Continuity via Cloud-Backed Sources]]
 
 ## Current Scope Direction
 
 Phase 1 is the implementation foundation: local multi-book reading, large-document performance, local search/annotations, and persistent reading state. **v1.0 shipped** with PDF and EPUB support.
 
-**Phase 1.5 (proposed next):** book source model, per-device reading state, and library source icons — still no backend.
+**Phase 1.5 (in progress):** book source model, per-device reading state, and library source icons — still no backend.
 
 **Phase 2 (revised):** optional login, cloud book sources, and cross-device continuity for users who opt in. Free tier remains local-only forever. See [[Decision - Continuity via Cloud-Backed Sources]].
 
@@ -70,4 +71,4 @@ Cloud storage of book content, AI-assisted understanding, and deeper cross-book 
 
 The product began as a response to the difficulty of reading a 15,000-page PDF. It evolved from a potential lightweight PDF viewer into a broader book-centric reading platform, then toward a local-first system with synchronizable reading state and eventual personal knowledge capabilities.
 
-See [[History - Product Evolution 2026-09-01]].
+See [[History - Product Evolution 2026-09-02]] and [[History - Product Evolution 2026-09-01]].

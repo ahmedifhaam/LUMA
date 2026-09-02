@@ -207,6 +207,30 @@ The library shows a **Continue Reading** card for the most recently opened book,
 
 ---
 
-## What's next (Phase 2)
+## What's next
 
-Cross-device sync and reading continuity are planned for Phase 2. See the [Phase 2 brief](../Documents/Personal%20Reading%20&%20Knowledge%20Platform/Phases/Phase%202%20-%20Synchronization%20and%20Continuity.md) for the draft specification.
+LUMA v1.0 is the **free, local-only** experience — and it stays that way forever. No account, no backend, no paywall on core reading.
+
+### Phase 1.5 (next)
+
+Client-side groundwork before any cloud features:
+
+- **Book source model** — local, cloud, and future connector sources represented in the data layer.
+- **Per-device reading state** — each device maintains its own reading track per book.
+- **Library source icons** — show where each book's content lives.
+
+Still **no backend**; still **free**.
+
+### Phase 2 (paid / opt-in)
+
+Optional account-based features for users who want continuity:
+
+- **Login** — username/password initially; Google OAuth later.
+- **Cloud book sources** — LUMA cloud, Google Drive, app-managed storage, and future plugins.
+- **Cross-device continuity** — continue reading on another device from a recent synchronized session when using a cloud-backed source.
+
+Logged-out users and local-only books are **unchanged** from v1. See [[Decision - Continuity via Cloud-Backed Sources]] and the [Phase 2 brief](../Documents/Personal%20Reading%20&%20Knowledge%20Platform/Phases/Phase%202%20-%20Synchronization%20and%20Continuity.md).
+
+### Free tier
+
+The free tier remains equivalent to **v1 forever**: local import, local storage, offline reading, no login required.
