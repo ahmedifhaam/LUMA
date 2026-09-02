@@ -2,6 +2,7 @@
 
 > [!summary]
 > **Status:** Defined — implementation planning
+> **Development branch:** `v2`
 > **Product:** [[Product - Overview]]
 > **Depends on:** [[Phase 1.5 - Local Source Model and Per-Device State]]
 > **Primary specification:** [[Specification - Cross-Device Sync and Reading Continuity]]
@@ -19,6 +20,18 @@ The Phase 2 MVP is intentionally narrow:
 5. Independent per-device reading tracks so synchronization does not silently overwrite local reading state.
 
 The backend is an extension of the reader, not a prerequisite for reading.
+
+## Development Branch
+
+Phase 2 work happens on the **`v2`** branch. **`v1.0`** is frozen for production bug fixes only — no Phase 2 features land there.
+
+| Branch | Purpose | Deploys to Pages |
+|--------|---------|------------------|
+| **`v1.0`** | Production / hotfixes | Yes (auto on push) |
+| **`v2`** | Phase 2 development | No (until v2 ships) |
+| **`main`** | Integration trunk; receives merges from feature branches | No |
+
+Feature branches for Phase 2 should target **`v2`**, not `v1.0`.
 
 ## Product Invariants
 
@@ -685,5 +698,6 @@ Annotation synchronization must be specified separately because highlight and no
 
 ## Revision History
 
+- **2026-09-02 (branch):** Phase 2 development branch set to `v2`; `v1.0` reserved for production bug fixes.
 - **2026-09-02 (sync):** Merged Phase 1.5 completion from `v1.0` — client contract stubs shipped; 7-day continuation default documented.
 - **2026-09-02:** Expanded from product-level proposal into implementation-oriented Phase 2 plan. Defined cloud-backed continuity as the primary path, local-first invariants, source/account/device identity, reading-location/session models, sync architecture, queue/cursor semantics, conflict policy, Google Drive connector boundary, backend contract direction, security requirements, failure behaviour, testing strategy, milestones, and exit criteria.

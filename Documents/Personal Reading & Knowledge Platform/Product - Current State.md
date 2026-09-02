@@ -31,7 +31,7 @@ The broader opportunity is not simply faster PDF rendering. The product should h
 
 ### Maturity Notes
 
-Phase 1 local reading foundation is **implemented and released as v1.0**. **Phase 1.5 is in progress** (source model, per-device state, library source icons). Phase 2 is **proposed**; continuity model was revised 2026-09-02 (cloud-backed sources, auth-gated paid features). See [[History - Product Evolution 2026-09-02]].
+Phase 1 local reading foundation is **implemented and released as v1.0**. **Phase 1.5 is complete** (source model, per-device state, library source icons — shipped on `v1.0`). **Phase 2 development** runs on the **`v2`** branch; continuity model revised 2026-09-02 (cloud-backed sources, auth-gated paid features). See [[History - Product Evolution 2026-09-02]].
 
 ## Current Decisions
 
@@ -45,9 +45,15 @@ Phase 1 local reading foundation is **implemented and released as v1.0**. **Phas
 
 Phase 1 is the implementation foundation: local multi-book reading, large-document performance, local search/annotations, and persistent reading state. **v1.0 shipped** with PDF and EPUB support.
 
-**Phase 1.5 (in progress):** book source model, per-device reading state, and library source icons — still no backend.
+**Phase 1.5 (complete, on `v1.0`):** book source model, per-device reading state, and library source icons — no backend.
 
-**Phase 2 (revised):** optional login, cloud book sources, and cross-device continuity for users who opt in. Free tier remains local-only forever. See [[Decision - Continuity via Cloud-Backed Sources]].
+**Phase 2 (in development on `v2`):** optional login, cloud book sources, and cross-device continuity for users who opt in. Free tier on `v1.0` remains local-only forever. See [[Decision - Continuity via Cloud-Backed Sources]] and [[Phase 2 - Synchronization and Continuity]].
+
+### Branch strategy
+
+- **`v1.0`** — production; bug fixes only; auto-deploys to GitHub Pages.
+- **`v2`** — Phase 2 feature work; does not deploy until explicitly released.
+- **`main`** — integration trunk; not deployed directly.
 
 Phase 2+ adds annotation sync, more connectors, and optional state-only sync for power users.
 

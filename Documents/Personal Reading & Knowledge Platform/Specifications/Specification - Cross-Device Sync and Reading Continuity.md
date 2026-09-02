@@ -694,7 +694,7 @@ The implementation may normalize or denormalize these records as appropriate.
 
 ## 28.1 Client Contracts (Phase 1.5)
 
-Phase 2 client-side API contracts are implemented on `v1.0` (stub backends only; no hosting yet):
+Phase 2 client-side API contracts are implemented on **`v2`** (stub backends only; no hosting yet):
 
 | Concern | Location | Notes |
 |---------|----------|-------|
