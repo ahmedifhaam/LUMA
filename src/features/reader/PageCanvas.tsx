@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Annotation, BookFormat } from '@/domain/book/types';
 import type { OpenDocument } from '@/domain/document/types';
 import { RenderCancelledError } from '@/infrastructure/document-engine/pdfjs/pdf-engine';
-import { clearEpubHighlights, syncEpubHighlights } from './highlight-rendering';
+import { clearEpubHighlights, scheduleEpubHighlightSync } from './highlight-rendering';
 
 interface PageCanvasProps {
   doc: OpenDocument;
@@ -43,8 +43,11 @@ export function PageCanvas({
 }: PageCanvasProps) {
   const canvasHostRef = useRef<HTMLDivElement>(null);
   const textLayerRef = useRef<HTMLDivElement>(null);
+  const highlightsRef = useRef(highlights);
   const [rendered, setRendered] = useState(false);
   const isEpub = bookFormat === 'epub';
+
+  highlightsRef.current = highlights;
 
   useEffect(() => {
     const canvasHost = canvasHostRef.current;
@@ -70,15 +73,21 @@ export function PageCanvas({
 
     textLayer.replaceChildren();
     const textTask = doc.renderTextLayer(pageNumber, scale, textLayer);
-    textTask.promise.catch(() => {
-      // Text layer is best-effort; failures must not break page viewing.
-    });
+    textTask.promise
+      .then(() => {
+        if (isEpub) {
+          scheduleEpubHighlightSync(textLayer, pageNumber, highlightsRef.current);
+        }
+      })
+      .catch(() => {
+        // Text layer is best-effort; failures must not break page viewing.
+      });
 
     return () => {
       renderTask.cancel();
       textTask.cancel();
       canvasHost.querySelector('canvas')?.remove();
-      if (isEpub) clearEpubHighlights(textLayer);
+      if (isEpub) clearEpubHighlights(textLayer, pageNumber);
       textLayer.replaceChildren();
     };
   }, [doc, pageNumber, scale, pageBackground, displayRevision, isEpub]);
@@ -89,39 +98,42 @@ export function PageCanvas({
     if (!textLayer) return;
 
     let disposed = false;
-    let detach: (() => void) | null = null;
 
-    const attach = () => {
-      if (disposed || detach) return;
-      const chapter = textLayer.querySelector('.epub-chapter');
-      if (!chapter) return;
-
-      const sync = () => {
-        if (!disposed) syncEpubHighlights(textLayer, highlights);
-      };
-      const onScroll = () => {
-        sync();
-        onClearSelection?.();
-      };
-
+    const sync = () => {
+      if (!disposed) {
+        scheduleEpubHighlightSync(textLayer, pageNumber, highlightsRef.current);
+      }
+    };
+    const onScroll = () => {
       sync();
-      textLayer.addEventListener('scroll', onScroll);
-      const observer = new ResizeObserver(sync);
-      observer.observe(chapter);
-      detach = () => {
-        textLayer.removeEventListener('scroll', onScroll);
-        observer.disconnect();
-      };
+      onClearSelection?.();
     };
 
-    attach();
-    const mutation = new MutationObserver(attach);
+    textLayer.addEventListener('scroll', onScroll);
+
+    let resizeObserver: ResizeObserver | null = null;
+    const observeChapter = () => {
+      const chapter = textLayer.querySelector('.epub-chapter');
+      if (!chapter) return;
+      resizeObserver?.disconnect();
+      resizeObserver = new ResizeObserver(sync);
+      resizeObserver.observe(chapter);
+    };
+
+    const mutation = new MutationObserver(() => {
+      observeChapter();
+      sync();
+    });
     mutation.observe(textLayer, { childList: true, subtree: true });
+
+    observeChapter();
+    sync();
 
     return () => {
       disposed = true;
       mutation.disconnect();
-      detach?.();
+      resizeObserver?.disconnect();
+      textLayer.removeEventListener('scroll', onScroll);
     };
   }, [isEpub, highlights, onClearSelection, displayRevision, pageNumber]);
 

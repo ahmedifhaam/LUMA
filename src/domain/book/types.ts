@@ -50,6 +50,12 @@ export interface NormalizedRect {
   height: number;
 }
 
+/** Character offsets in reflowable EPUB chapter text. */
+export interface TextAnchor {
+  start: number;
+  end: number;
+}
+
 /**
  * A reading annotation anchored to a stable {@link DocumentLocation} (never a DOM
  * node), so it can be reconstructed after reopening the document. See Phase 1
@@ -66,5 +72,7 @@ export interface Annotation {
   quote?: string;
   /** Highlight geometry on the page, in normalized coordinates. */
   rects?: NormalizedRect[];
+  /** Reflowable EPUB text range; preferred over rects for EPUB highlights. */
+  textAnchor?: TextAnchor;
   createdAt: number;
 }
