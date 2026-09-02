@@ -1,55 +1,84 @@
 import type { PageFitMode, ViewMode } from './reader-layout';
 import { FIT_MODE_OPTIONS, VIEW_MODE_OPTIONS } from './reader-layout';
+import {
+  ContinuousScrollIcon,
+  DoublePageIcon,
+  FitScreenIcon,
+  FitWidthIcon,
+  SinglePageIcon,
+} from './reader-layout-icons';
 
 interface ReaderLayoutControlsProps {
   fitMode: PageFitMode;
   viewMode: ViewMode;
   onFitModeChange: (mode: PageFitMode) => void;
   onViewModeChange: (mode: ViewMode) => void;
-  compact?: boolean;
 }
+
+const FIT_ICONS = {
+  width: FitWidthIcon,
+  screen: FitScreenIcon,
+} as const;
+
+const VIEW_ICONS = {
+  single: SinglePageIcon,
+  double: DoublePageIcon,
+  continuous: ContinuousScrollIcon,
+} as const;
 
 export function ReaderLayoutControls({
   fitMode,
   viewMode,
   onFitModeChange,
   onViewModeChange,
-  compact = false,
 }: ReaderLayoutControlsProps) {
   return (
     <>
-      <div className={`reader__bottom-group${compact ? ' reader__bottom-group--compact' : ''}`}>
-        {!compact && <span className="reader__bottom-label">Fit</span>}
+      <div className="reader__bottom-group">
         <div className="reader__segmented" role="group" aria-label="Page fit mode">
-          {FIT_MODE_OPTIONS.map((option) => (
-            <button
-              key={option.id}
-              type="button"
-              className={`reader__segment${fitMode === option.id ? ' reader__segment--active' : ''}`}
-              aria-pressed={fitMode === option.id}
-              onClick={() => onFitModeChange(option.id)}
-            >
-              {compact ? option.label.replace('Fit ', '') : option.label}
-            </button>
-          ))}
+          {FIT_MODE_OPTIONS.map((option) => {
+            const Icon = FIT_ICONS[option.id];
+            return (
+              <button
+                key={option.id}
+                type="button"
+                className={`reader__segment reader__segment--icon${
+                  fitMode === option.id ? ' reader__segment--active' : ''
+                }`}
+                aria-label={option.label}
+                title={option.label}
+                aria-pressed={fitMode === option.id}
+                data-testid={`fit-mode-${option.id}`}
+                onClick={() => onFitModeChange(option.id)}
+              >
+                <Icon className="reader__layout-icon" />
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      <div className={`reader__bottom-group${compact ? ' reader__bottom-group--compact' : ''}`}>
-        {!compact && <span className="reader__bottom-label">View</span>}
+      <div className="reader__bottom-group">
         <div className="reader__segmented" role="group" aria-label="Page view mode">
-          {VIEW_MODE_OPTIONS.map((option) => (
-            <button
-              key={option.id}
-              type="button"
-              className={`reader__segment${viewMode === option.id ? ' reader__segment--active' : ''}`}
-              aria-pressed={viewMode === option.id}
-              data-testid={`view-mode-${option.id}`}
-              onClick={() => onViewModeChange(option.id)}
-            >
-              {option.label}
-            </button>
-          ))}
+          {VIEW_MODE_OPTIONS.map((option) => {
+            const Icon = VIEW_ICONS[option.id];
+            return (
+              <button
+                key={option.id}
+                type="button"
+                className={`reader__segment reader__segment--icon${
+                  viewMode === option.id ? ' reader__segment--active' : ''
+                }`}
+                aria-label={option.label}
+                title={option.label}
+                aria-pressed={viewMode === option.id}
+                data-testid={`view-mode-${option.id}`}
+                onClick={() => onViewModeChange(option.id)}
+              >
+                <Icon className="reader__layout-icon" />
+              </button>
+            );
+          })}
         </div>
       </div>
     </>

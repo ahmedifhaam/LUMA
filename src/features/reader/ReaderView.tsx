@@ -372,7 +372,6 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
             viewMode={viewMode}
             onFitModeChange={handleFitModeChange}
             onViewModeChange={handleViewModeChange}
-            compact
           />
         </div>
 

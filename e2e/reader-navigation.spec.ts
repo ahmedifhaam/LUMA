@@ -39,7 +39,7 @@ test.describe('reader navigation', () => {
     await expect(page.locator('.reader__viewport--paginated')).toBeVisible();
     await bottomBar.getByTestId('view-mode-double').click();
     await expect(page.locator('.reader-slot--double').first()).toBeVisible();
-    await bottomBar.getByRole('button', { name: 'Fit screen' }).click();
+    await bottomBar.getByTestId('fit-mode-screen').click();
     await captureStep(page, 'reader-layout-bottom-bar');
   });
 });
