@@ -8,6 +8,7 @@ import {
 interface UseReaderShortcutsOptions {
   currentPage: number;
   pageCount: number;
+  viewMode: 'single' | 'double' | 'continuous';
   activePanel: ReaderPanelId | null;
   hasSelection: boolean;
   onGoToPage: (page: number) => void;
@@ -19,6 +20,7 @@ interface UseReaderShortcutsOptions {
 export function useReaderShortcuts({
   currentPage,
   pageCount,
+  viewMode,
   activePanel,
   hasSelection,
   onGoToPage,
@@ -27,7 +29,7 @@ export function useReaderShortcuts({
   onClearSelection,
 }: UseReaderShortcutsOptions): void {
   useEffect(() => {
-    const state = { currentPage, pageCount, activePanel, hasSelection };
+    const state = { currentPage, pageCount, viewMode, activePanel, hasSelection };
 
     function handleKeyDown(event: KeyboardEvent) {
       const action = resolveReaderShortcut(event, state);
@@ -71,6 +73,7 @@ export function useReaderShortcuts({
   }, [
     currentPage,
     pageCount,
+    viewMode,
     activePanel,
     hasSelection,
     onGoToPage,

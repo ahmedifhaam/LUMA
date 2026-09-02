@@ -4,6 +4,8 @@ import {
   stepPage,
 } from './reader-layout';
 
+export type ReaderPanelId = 'contents' | 'search' | 'bookmarks' | 'notes';
+
 export interface ReaderShortcutState {
   currentPage: number;
   pageCount: number;
@@ -84,7 +86,6 @@ export function pageForShortcut(
   action: ReaderShortcutAction,
   state: ReaderShortcutState,
 ): number | null {
-  const maxPage = Math.max(state.pageCount, 1);
   switch (action.type) {
     case 'previous-page':
       return stepPage(state.currentPage, state.pageCount, state.viewMode, -1);
