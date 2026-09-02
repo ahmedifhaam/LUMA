@@ -10,6 +10,7 @@ import { OutlinePanel } from './panels/OutlinePanel';
 import { SearchPanel } from './panels/SearchPanel';
 import { BookmarksPanel } from './panels/BookmarksPanel';
 import { NotesPanel } from './panels/NotesPanel';
+import { useReaderShortcuts } from './useReaderShortcuts';
 
 const PAGE_GAP = 16;
 const OVERSCAN = 2;
@@ -168,6 +169,22 @@ export function ReaderView({ onExit }: ReaderViewProps) {
     },
     [goToPage],
   );
+
+  const clearSelection = useCallback(() => {
+    window.getSelection()?.removeAllRanges();
+    setSelection(null);
+  }, []);
+
+  useReaderShortcuts({
+    currentPage,
+    pageCount,
+    activePanel,
+    hasSelection: selection !== null,
+    onGoToPage: goToPage,
+    onToggleBookmark: () => void toggleBookmark({ pageNumber: currentPage, yOffset: 0 }),
+    onSetActivePanel: setActivePanel,
+    onClearSelection: clearSelection,
+  });
 
   if (status === 'opening') {
     return <div className="reader-status">Opening book…</div>;
