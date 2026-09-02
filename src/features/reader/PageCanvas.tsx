@@ -9,7 +9,8 @@ interface PageCanvasProps {
   scale: number;
   width: number;
   height: number;
-  top: number;
+  top?: number;
+  inline?: boolean;
   highlights: Annotation[];
 }
 
@@ -28,6 +29,7 @@ export function PageCanvas({
   width,
   height,
   top,
+  inline = false,
   highlights,
 }: PageCanvasProps) {
   const canvasHostRef = useRef<HTMLDivElement>(null);
@@ -72,8 +74,8 @@ export function PageCanvas({
 
   return (
     <div
-      className="page-slot"
-      style={{ top, width, height }}
+      className={`page-slot${inline ? ' page-slot--inline' : ''}`}
+      style={inline ? { width, height } : { top, width, height }}
       data-page={pageNumber}
       data-testid={`page-${pageNumber}`}
     >
