@@ -412,6 +412,7 @@ body {
   background: var(--bg-elevated);
   border-top: 1px solid var(--border);
   flex-shrink: 0;
+  z-index: 5;
 }
 .reader__bottom-group {
   display: flex;
