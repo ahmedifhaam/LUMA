@@ -48,7 +48,7 @@ describe('continuation-store', () => {
     useContinuationStore.setState({ offer: null, visible: false });
   });
 
-  it('dismiss hides the banner without changing the offer', async () => {
+  it('dismiss hides the banner and clears the offer', async () => {
     mockFetchContinuationOffer.mockResolvedValue(offer);
 
     await useContinuationStore
@@ -58,7 +58,7 @@ describe('continuation-store', () => {
     expect(useContinuationStore.getState().visible).toBe(true);
     useContinuationStore.getState().dismiss();
     expect(useContinuationStore.getState().visible).toBe(false);
-    expect(useContinuationStore.getState().offer).toEqual(offer);
+    expect(useContinuationStore.getState().offer).toBeNull();
   });
 
   it('accept converts the offer location and clears the offer', async () => {

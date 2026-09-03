@@ -12,7 +12,7 @@ interface ContinuationState {
   offer: ContinuationOffer;
   visible: boolean;
   checkOnOpen: (
-    book: Pick<Book, 'id' | 'source' | 'format'>,
+    book: Pick<Book, 'id' | 'source' | 'format' | 'sourceRef'>,
     localLocation: DocumentLocation,
   ) => Promise<void>;
   accept: () => DocumentLocation | null;
@@ -50,7 +50,7 @@ export const useContinuationStore = create<ContinuationState>((set, get) => ({
 
   accept() {
     const { offer } = get();
-    if (!offer) return null;
+    if (!offer || offer.incompatibleContentVersion) return null;
 
     const location = fromReadingLocationEnvelope(offer.session.location);
     set({ offer: null, visible: false });
@@ -58,6 +58,6 @@ export const useContinuationStore = create<ContinuationState>((set, get) => ({
   },
 
   dismiss() {
-    set({ visible: false });
+    set({ visible: false, offer: null });
   },
 }));

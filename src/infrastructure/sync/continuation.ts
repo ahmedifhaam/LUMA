@@ -8,6 +8,14 @@ function locationsEqual(a: ReadingLocationEnvelope, b: ReadingLocationEnvelope):
   return JSON.stringify(a.locator) === JSON.stringify(b.locator);
 }
 
+function contentVersionsCompatible(
+  localVersion: string | null | undefined,
+  remoteVersion: string | null | undefined,
+): boolean {
+  if (!localVersion || !remoteVersion) return true;
+  return localVersion === remoteVersion;
+}
+
 /**
  * Finds the most recent qualifying cross-device continuation offer.
  *
@@ -15,12 +23,16 @@ function locationsEqual(a: ReadingLocationEnvelope, b: ReadingLocationEnvelope):
  * - lastActiveAt is within the 7-day window
  * - deviceId differs from the current device
  * - location differs from the current device's track
+ *
+ * When content versions differ, the offer is still returned with
+ * `incompatibleContentVersion: true` so the UI can explain without applying it.
  */
 export function findContinuationOffer(
   sessions: DeviceSession[],
   currentDeviceId: string,
   currentLocation: ReadingLocationEnvelope,
   now: number,
+  localContentVersion?: string | null,
 ): ContinuationOffer {
   const cutoff = now - CONTINUATION_WINDOW_MS;
 
@@ -36,5 +48,14 @@ export function findContinuationOffer(
   const best = qualifying[0];
   if (!best) return null;
 
-  return { fromDeviceName: best.deviceName, session: best };
+  const incompatibleContentVersion = !contentVersionsCompatible(
+    localContentVersion,
+    best.contentVersion,
+  );
+
+  return {
+    fromDeviceName: best.deviceName,
+    session: best,
+    incompatibleContentVersion,
+  };
 }

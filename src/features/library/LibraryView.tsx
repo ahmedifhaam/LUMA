@@ -10,6 +10,7 @@ import { useLibraryStore } from '@/application/library/library-store';
 import { IMPORT_FILE_ACCEPT } from '@/infrastructure/document-source/file-source';
 import { readingStateRepository } from '@/infrastructure/persistence/repositories';
 import { BookSourceIcon } from './BookSourceIcon';
+import { BookSyncBadge } from './BookSyncBadge';
 
 const IMPORT_INPUT_ID = 'library-import-input';
 
@@ -242,6 +243,7 @@ export function LibraryView({ onOpenBook, onOpenShortcuts }: LibraryViewProps) {
                     {book.pageCount.toLocaleString()} pages ·{' '}
                     {formatBytes(book.byteLength)}
                   </span>
+                  <BookSyncBadge book={book} />
                   <div className="book-card__actions">
                     <button
                       className="btn btn--small"

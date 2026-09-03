@@ -162,7 +162,7 @@ export async function pushReadingSession(
 
 export async function pullReadingSessions(
   page: Page,
-  bookId: string,
+  bookId?: string,
 ): Promise<Array<{ deviceId: string; deviceName: string; progress: number }>> {
   return page.evaluate(
     async ({ bookId, apiBaseUrl }) => {
@@ -171,7 +171,7 @@ export async function pullReadingSessions(
 
       const url = new URL(`${apiBaseUrl}/sync/pull`);
       url.searchParams.set('cursor', '0');
-      url.searchParams.set('bookId', bookId);
+      if (bookId) url.searchParams.set('bookId', bookId);
 
       const response = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` },
@@ -183,6 +183,6 @@ export async function pullReadingSessions(
       };
       return data.sessions;
     },
-    { bookId, apiBaseUrl: API_BASE_URL },
+    { bookId: bookId || undefined, apiBaseUrl: API_BASE_URL },
   );
 }

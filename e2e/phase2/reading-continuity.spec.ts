@@ -5,6 +5,7 @@ import {
   connectDriveViaUi,
   createPhase2Context,
   importDriveBookViaUi,
+  pullReadingSessions,
   setDeviceDisplayName,
   setDeviceId,
   signInViaUi,
@@ -55,6 +56,51 @@ test.describe('Phase 2 reading continuity', () => {
 
     await pageB.getByTestId('continuation-continue').click();
     await expect(pageB.getByLabel('Go to page')).toHaveValue('5');
+
+    await deviceA.close();
+    await deviceB.close();
+  });
+
+  test('start-fresh preserves local track and leaves device A session intact', async ({
+    browser,
+  }) => {
+    const deviceA = await createPhase2Context(browser);
+    const deviceB = await createPhase2Context(browser);
+    const pageA = await deviceA.newPage();
+    const pageB = await deviceB.newPage();
+
+    await pageA.goto('/');
+    await pageB.goto('/');
+    await setDeviceId(pageA, 'fresh-device-a');
+    await setDeviceId(pageB, 'fresh-device-b');
+    await setDeviceDisplayName(pageA, 'Test Laptop');
+    await setDeviceDisplayName(pageB, 'Test Phone');
+    await pageA.reload();
+    await pageB.reload();
+
+    await signInViaUi(pageA);
+    await closeAppMenu(pageA);
+    await connectDriveViaUi(pageA);
+    await importDriveBookViaUi(pageA);
+    await openFirstBook(pageA);
+    await readToPage(pageA, 5);
+    await pageA.getByRole('button', { name: 'Back to library' }).click();
+
+    await signInViaUi(pageB);
+    await closeAppMenu(pageB);
+    await connectDriveViaUi(pageB);
+    await importDriveBookViaUi(pageB);
+    await openFirstBook(pageB);
+
+    const prompt = pageB.getByTestId('continuation-prompt');
+    await expect(prompt).toBeVisible({ timeout: 15_000 });
+    await pageB.getByTestId('continuation-dismiss').click();
+    await expect(prompt).toBeHidden();
+    await expect(pageB.getByLabel('Go to page')).toHaveValue('1');
+
+    // Device A session remains on the server after B dismisses continuation.
+    const sessions = await pullReadingSessions(pageA);
+    expect(sessions.some((s) => s.deviceId === 'fresh-device-a')).toBe(true);
 
     await deviceA.close();
     await deviceB.close();

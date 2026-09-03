@@ -23,6 +23,7 @@ export function buildReadingStatePush(
   location: DocumentLocation,
   progress: number,
   format: 'pdf' | 'epub',
+  contentVersion?: string,
 ): ReadingStatePush {
   return {
     deviceId,
@@ -30,6 +31,7 @@ export function buildReadingStatePush(
     location: toReadingLocationEnvelope(format, location),
     progress,
     lastActiveAt: Date.now(),
+    contentVersion,
   };
 }
 
@@ -42,7 +44,13 @@ export async function pushReadingStateIfEligible(
   if (!canSyncReadingState(hasSession, book)) return;
 
   const format = book.format ?? 'pdf';
-  const push = buildReadingStatePush(getDeviceId(), location, progress, format);
+  const push = buildReadingStatePush(
+    getDeviceId(),
+    location,
+    progress,
+    format,
+    book.sourceRef?.contentVersion,
+  );
   await syncStateService.pushReadingState(book.id, push);
 }
 
@@ -52,10 +60,15 @@ export async function fetchContinuationOffer(
   format: 'pdf' | 'epub',
   localLocation: DocumentLocation,
   hasSession: boolean,
-  book?: Pick<Book, 'source'> | null,
+  book?: Pick<Book, 'source' | 'sourceRef'> | null,
 ): Promise<ContinuationOffer> {
   if (!canSyncReadingState(hasSession, book)) return null;
 
   const envelope = toReadingLocationEnvelope(format, localLocation);
-  return syncStateService.getContinuationOffer(bookId, deviceId, envelope);
+  return syncStateService.getContinuationOffer(
+    bookId,
+    deviceId,
+    envelope,
+    book?.sourceRef?.contentVersion,
+  );
 }

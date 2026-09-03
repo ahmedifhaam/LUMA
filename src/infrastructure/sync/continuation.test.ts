@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import type { ContinuationOffer, DeviceSession, ReadingLocationEnvelope } from './types';
 import { CONTINUATION_WINDOW_MS, findContinuationOffer } from './continuation';
-import type { DeviceSession, ReadingLocationEnvelope } from './types';
 
 const NOW = 1_700_000_000_000;
 const BOOK_ID = 'book-abc';
@@ -13,6 +13,7 @@ function makeSession(overrides: Partial<DeviceSession> = {}): DeviceSession {
     location: { format: 'pdf', locator: { pageNumber: 10, yOffset: 0.2 } },
     progress: 0.34,
     lastActiveAt: NOW - 60_000,
+    contentVersion: 'v1',
     ...overrides,
   };
 }
@@ -39,11 +40,12 @@ describe('findContinuationOffer', () => {
       }),
     ];
 
-    const offer = findContinuationOffer(sessions, 'device-current', currentLocation, NOW);
+    const offer = findContinuationOffer(sessions, 'device-current', currentLocation, NOW, 'v1');
 
     expect(offer).toEqual({
       fromDeviceName: 'Tablet',
       session: sessions[1],
+      incompatibleContentVersion: false,
     });
   });
 
@@ -94,5 +96,31 @@ describe('findContinuationOffer', () => {
 
   it('returns null when no sessions qualify', () => {
     expect(findContinuationOffer([], 'device-current', currentLocation, NOW)).toBeNull();
+  });
+
+  it('flags incompatible content versions without dropping the offer', () => {
+    const sessions = [makeSession({ contentVersion: 'v2' })];
+    const offer = findContinuationOffer(
+      sessions,
+      'device-current',
+      currentLocation,
+      NOW,
+      'v1',
+    ) as NonNullable<ContinuationOffer>;
+
+    expect(offer.incompatibleContentVersion).toBe(true);
+    expect(offer.fromDeviceName).toBe('Work Laptop');
+  });
+
+  it('treats missing versions as compatible', () => {
+    const sessions = [makeSession({ contentVersion: undefined })];
+    const offer = findContinuationOffer(
+      sessions,
+      'device-current',
+      currentLocation,
+      NOW,
+      'v1',
+    );
+    expect(offer?.incompatibleContentVersion).toBe(false);
   });
 });

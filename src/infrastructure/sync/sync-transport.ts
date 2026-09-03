@@ -1,5 +1,6 @@
 import { apiBaseUrl, authHeaders } from '@/config/api';
 import type { DeviceSession, ReadingLocationEnvelope } from './types';
+import { SyncAuthError } from './types';
 import type { SyncMutation } from './mutation';
 
 export interface SyncTransport {
@@ -17,6 +18,7 @@ function mapSession(raw: {
   location: ReadingLocationEnvelope;
   progress: number;
   lastActiveAt: number;
+  contentVersion?: string | null;
 }): DeviceSession {
   return {
     deviceId: raw.deviceId,
@@ -25,7 +27,17 @@ function mapSession(raw: {
     location: raw.location,
     progress: raw.progress,
     lastActiveAt: raw.lastActiveAt,
+    contentVersion: raw.contentVersion ?? undefined,
   };
+}
+
+function assertOk(response: Response, action: string): void {
+  if (response.status === 401) {
+    throw new SyncAuthError();
+  }
+  if (!response.ok && response.status !== 204) {
+    throw new Error(`${action} failed: ${response.status}`);
+  }
 }
 
 export class HttpSyncTransport implements SyncTransport {
@@ -44,12 +56,11 @@ export class HttpSyncTransport implements SyncTransport {
         progress: mutation.progress,
         lastActiveAt: mutation.lastActiveAt,
         mutationId: mutation.mutationId,
+        contentVersion: mutation.contentVersion,
       }),
     });
 
-    if (!response.ok && response.status !== 204) {
-      throw new Error(`Push failed: ${response.status}`);
-    }
+    assertOk(response, 'Push');
   }
 
   async pullChanges(
@@ -62,9 +73,7 @@ export class HttpSyncTransport implements SyncTransport {
     if (bookId) url.searchParams.set('bookId', bookId);
 
     const response = await fetch(url, { headers: authHeaders(token) });
-    if (!response.ok) {
-      throw new Error(`Pull failed: ${response.status}`);
-    }
+    assertOk(response, 'Pull');
 
     const data = (await response.json()) as {
       sessions: Array<{
@@ -74,6 +83,7 @@ export class HttpSyncTransport implements SyncTransport {
         location: ReadingLocationEnvelope;
         progress: number;
         lastActiveAt: number;
+        contentVersion?: string | null;
       }>;
       nextCursor: number;
     };
@@ -102,6 +112,7 @@ export class InMemorySyncTransport implements SyncTransport {
       location: mutation.location,
       progress: mutation.progress,
       lastActiveAt: mutation.lastActiveAt,
+      contentVersion: mutation.contentVersion,
     });
   }
 

@@ -84,6 +84,7 @@ describe('reading sync', () => {
         location: { format: 'pdf', locator: { pageNumber: 5, yOffset: 0.25 } },
         progress: 0.42,
         lastActiveAt: Date.parse('2026-01-15T12:00:00Z'),
+        contentVersion: undefined,
       });
     });
   });
@@ -100,6 +101,7 @@ describe('reading sync', () => {
         location: { format: 'pdf', locator: { pageNumber: 5, yOffset: 0.25 } },
         progress: 0.42,
         lastActiveAt: Date.parse('2026-01-15T12:00:00Z'),
+        contentVersion: 'v1',
       });
     });
 
@@ -138,10 +140,15 @@ describe('reading sync', () => {
         driveBook,
       );
 
-      expect(mockGetContinuationOffer).toHaveBeenCalledWith('book-abc', 'device-test', {
-        format: 'pdf',
-        locator: { pageNumber: 5, yOffset: 0.25 },
-      });
+      expect(mockGetContinuationOffer).toHaveBeenCalledWith(
+        'book-abc',
+        'device-test',
+        {
+          format: 'pdf',
+          locator: { pageNumber: 5, yOffset: 0.25 },
+        },
+        'v1',
+      );
       expect(result).toEqual(offer);
     });
 

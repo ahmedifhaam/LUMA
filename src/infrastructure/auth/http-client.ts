@@ -31,6 +31,7 @@ export class HttpAuthService implements AuthService {
 
     if (!response.ok) {
       this.storeToken(null);
+      this.notify(null);
       return null;
     }
 
@@ -71,5 +72,11 @@ export class HttpAuthService implements AuthService {
   onSessionChange(cb: (session: AuthSession) => void): () => void {
     this.listeners.add(cb);
     return () => this.listeners.delete(cb);
+  }
+
+  /** Clear local session without calling logout (e.g. expired token on sync 401). */
+  clearSessionLocally(): void {
+    this.storeToken(null);
+    this.notify(null);
   }
 }

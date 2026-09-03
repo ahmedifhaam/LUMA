@@ -48,9 +48,22 @@ describe('resolveBookBytes', () => {
     );
   });
 
+  it('resolves cached bytes for google-drive books', async () => {
+    const bytes = new Uint8Array([9, 8, 7]).buffer;
+    await sourceRepository.save({ bookId: 'book-1', bytes });
+
+    const result = await resolveBookBytes(
+      makeBook({
+        source: 'google-drive',
+        sourceRef: { remoteId: 'drive-1', fileName: 'test.pdf', contentVersion: 'v1' },
+      }),
+    );
+    expect(new Uint8Array(result)).toEqual(new Uint8Array([9, 8, 7]));
+  });
+
   it('throws for unsupported book sources', async () => {
     await expect(
-      resolveBookBytes(makeBook({ source: 'luma-cloud', sourceRef: { remoteId: 'x' } })),
-    ).rejects.toThrow('Unsupported book source: luma-cloud');
+      resolveBookBytes(makeBook({ source: 'plugin', sourceRef: { pluginId: 'x' } })),
+    ).rejects.toThrow('Unsupported book source: plugin');
   });
 });
