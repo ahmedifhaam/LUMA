@@ -87,6 +87,8 @@ export default defineConfig({
     env: {
       VITE_CLOUD_ENABLED: process.env.VITE_CLOUD_ENABLED ?? 'false',
       VITE_API_BASE_URL: process.env.VITE_API_BASE_URL ?? 'http://localhost:3000',
+      VITE_DRIVE_MOCK: process.env.VITE_DRIVE_MOCK ?? 'false',
+      VITE_GOOGLE_CLIENT_ID: process.env.VITE_GOOGLE_CLIENT_ID ?? '',
     },
   },
 });

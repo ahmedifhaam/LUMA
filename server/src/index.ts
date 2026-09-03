@@ -1,7 +1,10 @@
 import cors from 'cors';
 import express from 'express';
 import { migrate, pool, seedTestUser } from './db.js';
+import { googleMockEnabled } from './google/config.js';
 import { authRouter } from './routes/auth.js';
+import { driveRouter } from './routes/drive.js';
+import { googleAuthRouter } from './routes/google-auth.js';
 import { syncRouter } from './routes/sync.js';
 
 const PORT = Number(process.env.PORT ?? 3000);
@@ -16,14 +19,19 @@ async function main(): Promise<void> {
   app.use(express.json({ limit: '1mb' }));
 
   app.get('/health', (_req, res) => {
-    res.json({ status: 'ok' });
+    res.json({ status: 'ok', googleMock: googleMockEnabled() });
   });
 
   app.use('/auth', authRouter);
+  app.use('/auth/google', googleAuthRouter);
+  app.use('/drive', driveRouter);
   app.use('/sync', syncRouter);
 
   app.listen(PORT, () => {
     console.log(`LUMA API listening on http://localhost:${PORT}`);
+    if (googleMockEnabled()) {
+      console.log('Google Drive mock mode enabled (GOOGLE_MOCK=true)');
+    }
   });
 }
 

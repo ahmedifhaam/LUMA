@@ -58,21 +58,30 @@ npm run dev      # start the dev server at http://localhost:5173
 
 ## Phase 2 local stack (v2 branch)
 
-Phase 2 adds an optional API for auth and reading-state sync. The free local
-reader still works without it.
+Phase 2 adds an optional API for auth, Google Drive sources, and reading-state sync.
+The free local reader still works without it.
 
 **Requirements:** Docker (for Postgres + API).
 
 ```bash
-cp .env.example .env.local   # optional reference
-npm run docker:up            # Postgres :5432, API :3000
-npm run dev:cloud            # Vite with cloud features at :5173
+cp .env.example .env.local
+# Add GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / VITE_GOOGLE_CLIENT_ID for real Drive.
+# For CI-style mock Drive (no Google account): GOOGLE_MOCK=true and VITE_DRIVE_MOCK=true
+
+# Real Drive (manual):
+export $(grep -v '^#' .env.local | xargs)
+GOOGLE_MOCK=false docker compose up -d --wait --build
+npm run dev:cloud
+
+# Mock Drive (automated tests):
+GOOGLE_MOCK=true npm run docker:up
+VITE_DRIVE_MOCK=true npm run dev:cloud
 ```
 
 Seeded dev account (when `SEED_TEST_USER=true` in compose): **`testuser` / `testpass`**
 
 ```bash
-npm run test:e2e:phase2      # Playwright + screen recordings
+npm run test:e2e:phase2      # Playwright + screen recordings (uses Drive mock)
 ```
 
 Recordings are saved to `e2e/artifacts/pr-videos/`. On PRs to `v2`, CI uploads
@@ -83,6 +92,13 @@ them as workflow artifacts and posts a comment with download links.
 | Frontend | http://localhost:5173 |
 | API      | http://localhost:3000 |
 | Postgres | localhost:5432 (`luma` / `luma`) |
+
+### Google Drive (M5)
+
+1. Sign in to LUMA Cloud.
+2. App menu → **Connect Google Drive** (OAuth; client secret stays on the API).
+3. Library → **From Drive** → pick PDF/EPUB (Google Picker with `drive.file` scope).
+4. Imported books are tagged `google-drive` and are eligible for cross-device sync.
 
 ## What works today (Phase 1 vertical slice)
 

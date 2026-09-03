@@ -50,6 +50,23 @@ export async function migrate(): Promise<void> {
 
     CREATE INDEX IF NOT EXISTS reading_sessions_account_revision_idx
       ON reading_sessions (account_id, server_revision);
+
+    CREATE TABLE IF NOT EXISTS google_tokens (
+      account_id UUID PRIMARY KEY REFERENCES accounts(id) ON DELETE CASCADE,
+      access_token TEXT NOT NULL,
+      refresh_token TEXT,
+      expiry TIMESTAMPTZ NOT NULL,
+      scope TEXT NOT NULL,
+      connected_email TEXT,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS drive_file_grants (
+      account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+      file_id TEXT NOT NULL,
+      granted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (account_id, file_id)
+    );
   `);
 }
 

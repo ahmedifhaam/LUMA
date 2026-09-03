@@ -1,0 +1,40 @@
+---
+description: Phase 2 local-first sync and auth invariants
+globs: src/**/sync/**/*,src/**/auth/**/*,server/**/*
+alwaysApply: false
+---
+
+# Sync and auth invariants
+
+Non-negotiable for Phase 2 (see Phase 2 brief):
+
+- Logged-out users keep the full local v1 experience.
+- Local-only books never imply upload.
+- Sync is async and must not block page/chapter navigation.
+- Continuation is **explicit** — never silently replace this device's position.
+- Each device keeps its own track; conflict policy is independent tracks, not LWW merge.
+- Phase 2 syncs reading position/session metadata only — not annotations, not local book bytes.
+- No credentials, tokens, or secrets in source, tests, docs, or the static client bundle.
+
+## Ownership
+
+- Reader/UI saves locally first; does not call the sync API ad hoc.
+- `SyncCoordinator` owns queue, push/pull, cursor, retry/backoff.
+- Auth failure must not erase local reading state.
+- Push mutations must be idempotent; advance pull cursor only after successful local apply.
+
+## Server (`server/`)
+
+- Authorize every account-scoped resource.
+- Seeded dev user (`testuser` / `testpass`) only when `SEED_TEST_USER=true` in compose.
+- Keep API contracts aligned with client `AuthService` / sync transport interfaces.
+
+## ❌ / ✅
+
+```typescript
+// ❌ BAD — open book jumps to remote position automatically
+await reader.goTo(remoteSession.location);
+
+// ✅ GOOD — offer continuation; preserve local track on dismiss
+continuationStore.offer(remoteSession); // user picks Continue | Start from this device
+```

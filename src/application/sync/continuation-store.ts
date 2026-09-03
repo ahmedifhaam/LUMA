@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { BookFormat } from '@/domain/book/types';
+import type { Book, BookFormat } from '@/domain/book/types';
 import type { DocumentLocation } from '@/domain/document/types';
 import { fromReadingLocationEnvelope } from '@/domain/sync/reading-location';
 import { features } from '@/config/features';
@@ -12,8 +12,7 @@ interface ContinuationState {
   offer: ContinuationOffer;
   visible: boolean;
   checkOnOpen: (
-    bookId: string,
-    format: BookFormat,
+    book: Pick<Book, 'id' | 'source' | 'format'>,
     localLocation: DocumentLocation,
   ) => Promise<void>;
   accept: () => DocumentLocation | null;
@@ -24,7 +23,7 @@ export const useContinuationStore = create<ContinuationState>((set, get) => ({
   offer: null,
   visible: false,
 
-  async checkOnOpen(bookId, format, localLocation) {
+  async checkOnOpen(book, localLocation) {
     if (!features.cloudEnabled) {
       set({ offer: null, visible: false });
       return;
@@ -37,12 +36,14 @@ export const useContinuationStore = create<ContinuationState>((set, get) => ({
       return;
     }
 
+    const format = (book.format ?? 'pdf') as BookFormat;
     const offer = await fetchContinuationOffer(
-      bookId,
+      book.id,
       getDeviceId(),
       format,
       localLocation,
       hasSession,
+      book,
     );
     set({ offer, visible: offer !== null });
   },

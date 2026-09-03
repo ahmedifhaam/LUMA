@@ -28,7 +28,7 @@ vi.mock('@/infrastructure/device/device-id', () => ({
   getDeviceDisplayName: () => 'Test Reader',
 }));
 
-const book: Book = {
+const localBook: Book = {
   id: 'book-abc',
   title: 'Sample',
   author: null,
@@ -37,9 +37,16 @@ const book: Book = {
   hasText: true,
   format: 'pdf',
   sourceName: 'sample.pdf',
+  source: 'local',
   createdAt: 0,
   lastOpenedAt: null,
   coverThumbnail: null,
+};
+
+const driveBook: Book = {
+  ...localBook,
+  source: 'google-drive',
+  sourceRef: { remoteId: 'drive-1', fileName: 'sample.pdf', contentVersion: 'v1' },
 };
 
 const location: DocumentLocation = { pageNumber: 5, yOffset: 0.25 };
@@ -56,12 +63,16 @@ describe('reading sync', () => {
   });
 
   describe('canSyncReadingState', () => {
-    it('is true when cloud is enabled and the user has a session', () => {
-      expect(canSyncReadingState(true)).toBe(true);
+    it('is true for google-drive books when signed in', () => {
+      expect(canSyncReadingState(true, driveBook)).toBe(true);
+    });
+
+    it('is false for local books even when signed in', () => {
+      expect(canSyncReadingState(true, localBook)).toBe(false);
     });
 
     it('is false without a session', () => {
-      expect(canSyncReadingState(false)).toBe(false);
+      expect(canSyncReadingState(false, driveBook)).toBe(false);
     });
   });
 
@@ -78,10 +89,10 @@ describe('reading sync', () => {
   });
 
   describe('pushReadingStateIfEligible', () => {
-    it('pushes reading state when eligible', async () => {
+    it('pushes reading state for cloud-backed books', async () => {
       mockPushReadingState.mockResolvedValue(undefined);
 
-      await pushReadingStateIfEligible(book, location, 0.42, true);
+      await pushReadingStateIfEligible(driveBook, location, 0.42, true);
 
       expect(mockPushReadingState).toHaveBeenCalledWith('book-abc', {
         deviceId: 'device-test',
@@ -92,9 +103,13 @@ describe('reading sync', () => {
       });
     });
 
-    it('skips push when there is no session', async () => {
-      await pushReadingStateIfEligible(book, location, 0.42, false);
+    it('skips push for local books', async () => {
+      await pushReadingStateIfEligible(localBook, location, 0.42, true);
+      expect(mockPushReadingState).not.toHaveBeenCalled();
+    });
 
+    it('skips push when there is no session', async () => {
+      await pushReadingStateIfEligible(driveBook, location, 0.42, false);
       expect(mockPushReadingState).not.toHaveBeenCalled();
     });
   });
@@ -120,6 +135,7 @@ describe('reading sync', () => {
         'pdf',
         location,
         true,
+        driveBook,
       );
 
       expect(mockGetContinuationOffer).toHaveBeenCalledWith('book-abc', 'device-test', {
@@ -135,7 +151,8 @@ describe('reading sync', () => {
         'device-test',
         'pdf',
         location,
-        false,
+        true,
+        localBook,
       );
 
       expect(mockGetContinuationOffer).not.toHaveBeenCalled();

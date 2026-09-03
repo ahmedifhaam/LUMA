@@ -1,0 +1,47 @@
+---
+description: Phase 2 increment workflow — TDD, branches, PR recordings
+alwaysApply: true
+---
+
+# Phase 2 workflow
+
+## Branches
+
+- Day-to-day work: feature branch → **PR into `v2`** (not `main`, not `v1.0`).
+- Releases only: PR **`v2` → `main`** once a deploy target exists for `main`.
+- `v1.0` is production/Pages hotfixes only — no Phase 2 features.
+
+## Increments
+
+Ship one vertical slice per PR (contracts → UI → e2e → recordings). Prefer a thin end-to-end path over a wide incomplete layer. Read Phase 2 brief before architectural changes:
+
+`Documents/Personal Reading & Knowledge Platform/Phases/Phase 2 - Synchronization and Continuity.md`
+
+## TDD (required)
+
+1. Write or extend a failing unit/integration test for the behaviour.
+2. Implement the minimum to pass.
+3. Refactor behind green tests.
+4. Do not open a PR with new behaviour that has no automated coverage.
+
+Prefer co-located `*.test.ts` next to the module under test (Vitest).
+
+## PR checklist
+
+Every Phase 2 PR must:
+
+- [ ] Target **`v2`**
+- [ ] Include unit tests for the new behaviour (TDD)
+- [ ] Include or update Playwright coverage under `e2e/phase2/`
+- [ ] Produce named screen recordings in `e2e/artifacts/pr-videos/` + `manifest.json` via `npm run test:e2e:phase2` (CI uploads + comments)
+- [ ] Keep cloud behind `VITE_CLOUD_ENABLED` — logged-out/local path unchanged when off
+- [ ] Never commit secrets, tokens, or `.env` with credentials
+
+## Local stack
+
+```bash
+npm run docker:up      # Postgres + API :3000
+npm run dev:cloud      # Vite with cloud features
+npm test               # unit
+npm run test:e2e:phase2  # e2e + PR videos
+```

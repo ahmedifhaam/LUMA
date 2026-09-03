@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { features } from '@/config/features';
 import { useAuthStore } from '@/application/auth/auth-store';
+import { useDriveStore } from '@/application/library/drive-store';
 import { AuthModal } from '@/features/auth/AuthModal';
 import { CLOUD_PROMO, HOW_TO_TIPS } from './app-menu-sections';
 
@@ -24,6 +25,12 @@ export function AppMenu({ onOpenShortcuts }: AppMenuProps) {
   const signOut = useAuthStore((s) => s.signOut);
   const initialize = useAuthStore((s) => s.initialize);
 
+  const driveStatus = useDriveStore((s) => s.status);
+  const driveLoading = useDriveStore((s) => s.loading);
+  const refreshDriveStatus = useDriveStore((s) => s.refreshStatus);
+  const connectDrive = useDriveStore((s) => s.connect);
+  const disconnectDrive = useDriveStore((s) => s.disconnect);
+
   const [menuOpen, setMenuOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [cloudNotice, setCloudNotice] = useState<string | null>(null);
@@ -33,6 +40,24 @@ export function AppMenu({ onOpenShortcuts }: AppMenuProps) {
   useEffect(() => {
     void initialize();
   }, [initialize]);
+
+  useEffect(() => {
+    if (!cloudEnabled || !session) return;
+    void refreshDriveStatus();
+  }, [cloudEnabled, session, refreshDriveStatus]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const driveResult = params.get('googleDrive');
+    if (!driveResult) return;
+    void refreshDriveStatus();
+    params.delete('googleDrive');
+    params.delete('mock');
+    params.delete('reason');
+    const next = params.toString();
+    const url = `${window.location.pathname}${next ? `?${next}` : ''}${window.location.hash}`;
+    window.history.replaceState({}, '', url);
+  }, [refreshDriveStatus]);
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 640px)');
@@ -73,6 +98,23 @@ export function AppMenu({ onOpenShortcuts }: AppMenuProps) {
   function handleShortcuts() {
     closeMenu();
     onOpenShortcuts();
+  }
+
+  async function handleConnectDrive() {
+    try {
+      await connectDrive();
+      closeMenu();
+    } catch {
+      // Error surfaced via drive store
+    }
+  }
+
+  async function handleDisconnectDrive() {
+    try {
+      await disconnectDrive();
+    } catch {
+      // Error surfaced via drive store
+    }
   }
 
   return (
@@ -138,6 +180,45 @@ export function AppMenu({ onOpenShortcuts }: AppMenuProps) {
                     </button>
                   )}
                 </section>
+              ) : null}
+
+              {cloudEnabled && session ? (
+                <>
+                  <div className="app-menu__divider" />
+                  <section className="app-menu__section" data-testid="app-menu-drive">
+                    <h3 className="app-menu__section-label">Google Drive</h3>
+                    {driveStatus?.connected ? (
+                      <>
+                        <p className="app-menu__account" data-testid="drive-connected-label">
+                          Connected
+                          {driveStatus.email ? ` as ${driveStatus.email}` : ''}
+                          {driveStatus.mock ? ' (mock)' : ''}
+                        </p>
+                        <button
+                          type="button"
+                          className="app-menu__item"
+                          role="menuitem"
+                          data-testid="app-menu-drive-disconnect"
+                          disabled={driveLoading}
+                          onClick={() => void handleDisconnectDrive()}
+                        >
+                          Disconnect Google Drive
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        className="app-menu__item"
+                        role="menuitem"
+                        data-testid="app-menu-drive-connect"
+                        disabled={driveLoading || driveStatus?.configured === false}
+                        onClick={() => void handleConnectDrive()}
+                      >
+                        {driveLoading ? 'Connecting…' : 'Connect Google Drive'}
+                      </button>
+                    )}
+                  </section>
+                </>
               ) : null}
 
               {cloudEnabled ? (

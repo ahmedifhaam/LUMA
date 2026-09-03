@@ -24,8 +24,13 @@ services:
       DATABASE_URL: postgres://luma:luma@postgres:5432/luma
       JWT_SECRET: dev-secret-change-in-prod
       CORS_ORIGIN: http://localhost:5173
+      FRONTEND_ORIGIN: http://localhost:5173
       SEED_TEST_USER: 'true'
       PORT: '3000'
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-http://localhost:3000/auth/google/callback}
+      GOOGLE_MOCK: ${GOOGLE_MOCK:-true}
     depends_on:
       postgres:
         condition: service_healthy

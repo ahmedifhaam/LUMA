@@ -1,0 +1,43 @@
+---
+description: Layered architecture — domain, application, features, infrastructure
+globs: src/**/*
+alwaysApply: false
+---
+
+# Architecture layers
+
+```text
+src/
+├── domain/           # Engine-agnostic contracts (book, document, sync location)
+├── application/      # Use cases + Zustand stores
+├── features/         # React UI only
+├── infrastructure/   # PDF.js, IndexedDB, HTTP auth/sync, adapters
+├── app/              # Shell, routing, global styles
+└── config/           # Feature flags, API base URL
+```
+
+## Dependency rules
+
+- `features/` may call `application/` and read `domain/` types — never IndexedDB, PDF.js, or `fetch` to the API directly.
+- `application/` coordinates use cases; persistence and network go through `infrastructure/` interfaces.
+- `domain/` has no React, no IndexedDB, no HTTP.
+- Document engines live behind adapters (`infrastructure/document-engine/`). Sources behind `document-source` / `book-source`.
+- Components must justify new layers — no ceremony-only abstractions.
+
+## Identity and state
+
+- Logical book identity is content-based (SHA-256), not filename/path.
+- Reading state is per-device; UI must not assume a single global cursor.
+- Cloud features gated by `features.cloudEnabled` / `VITE_CLOUD_ENABLED` (default off).
+
+## ❌ / ✅
+
+```typescript
+// ❌ BAD — UI talking to storage or PDF.js
+await idb.put('books', book);
+await pdfjs.getDocument(data);
+
+// ✅ GOOD — UI → application store / use case
+await libraryStore.importBook(file);
+await readerStore.openBook(bookId);
+```

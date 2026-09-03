@@ -1,9 +1,11 @@
 import { test, expect } from '@playwright/test';
-import { FIXTURE_FILES, importBook, openFirstBook } from '../helpers/test-utils';
+import { openFirstBook } from '../helpers/test-utils';
 import {
   PHASE2_TEST_USER,
   closeAppMenu,
+  connectDriveViaUi,
   createPhase2Context,
+  importDriveBookViaUi,
   saveContextVideo,
   savePhase2Video,
   setDeviceDisplayName,
@@ -34,7 +36,7 @@ test.describe('Phase 2 happy path recordings', () => {
     writeRecordingsManifest(recordings);
   });
 
-  test('01 — app menu and sign-in modal', async ({ page }) => {
+  test('01 — app menu, sign-in, and Drive connect', async ({ page }) => {
     await page.goto('/');
 
     await page.getByTestId('app-menu-trigger').click();
@@ -51,17 +53,22 @@ test.describe('Phase 2 happy path recordings', () => {
 
     await page.getByTestId('app-menu-trigger').click();
     await expect(page.getByTestId('auth-user-label')).toHaveText(PHASE2_TEST_USER.username);
+    await closeAppMenu(page);
+
+    await connectDriveViaUi(page);
+    await page.getByTestId('app-menu-trigger').click();
+    await expect(page.getByTestId('drive-connected-label')).toBeVisible();
     await page.waitForTimeout(800);
 
     await savePhase2Video(page, 'phase2-01-app-menu-and-sign-in');
     recordings.push({
       file: 'phase2-01-app-menu-and-sign-in.webm',
-      title: 'App menu & sign-in',
-      description: 'Kebab menu, LUMA Cloud section, sign-in modal, signed-in account state.',
+      title: 'Sign-in & Connect Drive',
+      description: 'LUMA sign-in, Connect Google Drive (mock in CI), connected account state.',
     });
   });
 
-  test('02 — read on device A and sync position', async ({ browser }) => {
+  test('02 — import from Drive, read on device A, sync', async ({ browser }) => {
     const context = await createPhase2Context(browser);
     const page = await context.newPage();
 
@@ -72,7 +79,8 @@ test.describe('Phase 2 happy path recordings', () => {
 
     await signInViaUi(page);
     await closeAppMenu(page);
-    await importBook(page, FIXTURE_FILES.samplePdf);
+    await connectDriveViaUi(page);
+    await importDriveBookViaUi(page);
     await openFirstBook(page);
     await readToPage(page, 5);
     await page.waitForTimeout(500);
@@ -83,8 +91,8 @@ test.describe('Phase 2 happy path recordings', () => {
     await saveContextVideo(context, page, 'phase2-02-read-and-sync');
     recordings.push({
       file: 'phase2-02-read-and-sync.webm',
-      title: 'Read & sync (Device A)',
-      description: 'Import PDF, read to page 5, return to library — position syncs to cloud.',
+      title: 'Drive import & sync (Device A)',
+      description: 'Import Drive PDF, read to page 5, return to library — position syncs.',
     });
   });
 
@@ -99,7 +107,8 @@ test.describe('Phase 2 happy path recordings', () => {
 
     await signInViaUi(page);
     await closeAppMenu(page);
-    await importBook(page, FIXTURE_FILES.samplePdf);
+    await connectDriveViaUi(page);
+    await importDriveBookViaUi(page);
     await openFirstBook(page);
 
     const prompt = page.getByTestId('continuation-prompt');
@@ -115,7 +124,7 @@ test.describe('Phase 2 happy path recordings', () => {
     recordings.push({
       file: 'phase2-03-continuation-on-device-b.webm',
       title: 'Cross-device continuation (Device B)',
-      description: 'Continuation banner from Test Laptop, Continue → lands on page 5.',
+      description: 'Same Drive book on Device B — Continue from Test Laptop → page 5.',
     });
   });
 });
