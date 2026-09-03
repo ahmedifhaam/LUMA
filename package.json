@@ -23,9 +23,9 @@
     "test:e2e:ui": "playwright test --ui",
     "docker:up": "docker compose up -d --wait",
     "docker:down": "docker compose down",
-    "dev:cloud": "VITE_CLOUD_ENABLED=true VITE_API_BASE_URL=http://localhost:3000 npm run dev",
-    "test:e2e:phase2": "CI=true PHASE2_DOCKER=true VITE_CLOUD_ENABLED=true VITE_API_BASE_URL=http://localhost:3000 playwright test --project=phase2 --project=phase2-recordings",
-    "test:e2e:phase2:recordings": "CI=true PHASE2_DOCKER=true VITE_CLOUD_ENABLED=true VITE_API_BASE_URL=http://localhost:3000 playwright test --project=phase2-recordings"
+    "dev:cloud": "VITE_CLOUD_ENABLED=true VITE_API_BASE_URL=http://localhost:3000 VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID:-} npm run dev",
+    "test:e2e:phase2": "CI=true PHASE2_DOCKER=true VITE_CLOUD_ENABLED=true VITE_DRIVE_MOCK=true VITE_API_BASE_URL=http://localhost:3000 GOOGLE_MOCK=true playwright test --project=phase2 --project=phase2-recordings",
+    "test:e2e:phase2:recordings": "CI=true PHASE2_DOCKER=true VITE_CLOUD_ENABLED=true VITE_DRIVE_MOCK=true VITE_API_BASE_URL=http://localhost:3000 GOOGLE_MOCK=true playwright test --project=phase2-recordings"
   },
   "dependencies": {
     "jszip": "^3.10.1",

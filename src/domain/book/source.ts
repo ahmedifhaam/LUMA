@@ -13,6 +13,8 @@ export interface BookSourceRef {
   remoteId?: string;
   /** Connector id when {@link BookSourceKind} is `plugin`. */
   pluginId?: string;
+  /** Provider content revision (e.g. Drive md5Checksum / modifiedTime). */
+  contentVersion?: string;
 }
 
 export const BOOK_SOURCE_LABELS: Record<BookSourceKind, string> = {

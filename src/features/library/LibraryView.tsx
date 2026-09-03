@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Book, ReadingState } from '@/domain/book/types';
 import { normalizeBookSource } from '@/domain/book/source';
+import { features } from '@/config/features';
+import { useAuthStore } from '@/application/auth/auth-store';
+import { useDriveStore } from '@/application/library/drive-store';
 import { AppMenu } from '@/features/menu/AppMenu';
+import { DriveFilePickerModal } from '@/features/library/DriveFilePickerModal';
 import { useLibraryStore } from '@/application/library/library-store';
 import { IMPORT_FILE_ACCEPT } from '@/infrastructure/document-source/file-source';
 import { readingStateRepository } from '@/infrastructure/persistence/repositories';
@@ -35,12 +39,25 @@ export function LibraryView({ onOpenBook, onOpenShortcuts }: LibraryViewProps) {
   const importFile = useLibraryStore((s) => s.importFile);
   const removeBook = useLibraryStore((s) => s.removeBook);
 
+  const session = useAuthStore((s) => s.session);
+  const driveStatus = useDriveStore((s) => s.status);
+  const driveLoading = useDriveStore((s) => s.loading);
+  const driveError = useDriveStore((s) => s.error);
+  const openPickerAndImport = useDriveStore((s) => s.openPickerAndImport);
+  const refreshDriveStatus = useDriveStore((s) => s.refreshStatus);
+
   const [notice, setNotice] = useState<string | null>(null);
   const [progressMap, setProgressMap] = useState<Record<string, ReadingState>>({});
 
   useEffect(() => {
     void loadLibrary();
   }, [loadLibrary]);
+
+  useEffect(() => {
+    if (features.cloudEnabled && session) {
+      void refreshDriveStatus();
+    }
+  }, [session, refreshDriveStatus]);
 
   useEffect(() => {
     void readingStateRepository.listForDevice().then((states) => {
@@ -79,6 +96,19 @@ export function LibraryView({ onOpenBook, onOpenShortcuts }: LibraryViewProps) {
     }
   }
 
+  async function handleAddFromDrive() {
+    setNotice(null);
+    try {
+      const imported = await openPickerAndImport();
+      if (imported) setNotice('Imported from Google Drive.');
+    } catch {
+      // Error on drive store
+    }
+  }
+
+  const showDriveImport =
+    features.cloudEnabled && Boolean(session) && Boolean(driveStatus?.connected);
+
   return (
     <div className="library">
       <header className="library__header">
@@ -105,6 +135,17 @@ export function LibraryView({ onOpenBook, onOpenShortcuts }: LibraryViewProps) {
               });
             }}
           />
+          {showDriveImport ? (
+            <button
+              type="button"
+              className="btn"
+              data-testid="add-from-drive"
+              disabled={driveLoading || importing}
+              onClick={() => void handleAddFromDrive()}
+            >
+              {driveLoading ? 'Drive…' : 'From Drive'}
+            </button>
+          ) : null}
           <label
             htmlFor={IMPORT_INPUT_ID}
             className={`btn btn--primary${importing ? ' btn--disabled' : ''}`}
@@ -117,6 +158,9 @@ export function LibraryView({ onOpenBook, onOpenShortcuts }: LibraryViewProps) {
 
       {notice && <div className="library__notice">{notice}</div>}
       {error && <div className="library__error">{error}</div>}
+      {driveError && <div className="library__error">{driveError}</div>}
+
+      <DriveFilePickerModal />
 
       {continueReading && (
         <section className="library__section">

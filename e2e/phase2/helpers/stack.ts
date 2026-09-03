@@ -29,6 +29,10 @@ export async function ensurePhase2Stack(): Promise<void> {
   execSync('docker compose up -d --wait', {
     cwd: root,
     stdio: 'inherit',
+    env: {
+      ...process.env,
+      GOOGLE_MOCK: process.env.GOOGLE_MOCK ?? 'true',
+    },
   });
   await waitForApi();
 }

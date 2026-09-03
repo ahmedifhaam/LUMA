@@ -100,8 +100,7 @@ export function ReaderView({ onExit, onOpenShortcuts }: ReaderViewProps) {
     if (status !== 'ready' || !book) return;
     if (continuationCheckedRef.current === book.id) return;
     continuationCheckedRef.current = book.id;
-    const format = book.format ?? 'pdf';
-    void useContinuationStore.getState().checkOnOpen(book.id, format, location);
+    void useContinuationStore.getState().checkOnOpen(book, location);
   }, [status, book, location]);
 
   useEffect(() => {

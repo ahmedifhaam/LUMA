@@ -4,7 +4,7 @@ COPY package.json package-lock.json* ./
 RUN npm ci
 COPY tsconfig.json ./
 COPY src ./src
-RUN npm run build
+RUN npm run build && mkdir -p dist/google/mock-assets && cp -R src/google/mock-assets/. dist/google/mock-assets/
 
 FROM node:22-alpine
 WORKDIR /app

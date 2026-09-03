@@ -1,6 +1,6 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { Browser, BrowserContext, Page } from '@playwright/test';
+import { expect, type Browser, type BrowserContext, type Page } from '@playwright/test';
 
 export const PHASE2_TEST_USER = {
   username: 'testuser',
@@ -54,6 +54,28 @@ export async function signInViaUi(
   await page.getByTestId('auth-modal').waitFor({ state: 'hidden', timeout: 15_000 });
   await page.getByTestId('app-menu-trigger').click();
   await page.getByTestId('auth-user-label').waitFor({ timeout: 15_000 });
+}
+
+/** Connect Google Drive via mock OAuth (GOOGLE_MOCK / VITE_DRIVE_MOCK). */
+export async function connectDriveViaUi(page: Page): Promise<void> {
+  await page.getByTestId('app-menu-trigger').click();
+  await Promise.all([
+    page.waitForURL(/googleDrive=connected/, { timeout: 15_000 }),
+    page.getByTestId('app-menu-drive-connect').click(),
+  ]);
+  await page.getByRole('heading', { name: 'My Library' }).waitFor({ timeout: 15_000 });
+  await page.getByTestId('app-menu-trigger').click();
+  await page.getByTestId('drive-connected-label').waitFor({ timeout: 15_000 });
+  await closeAppMenu(page);
+}
+
+/** Import the mock Drive PDF into the library. */
+export async function importDriveBookViaUi(page: Page): Promise<void> {
+  await page.getByTestId('add-from-drive').click();
+  await page.getByTestId('drive-picker-modal').waitFor({ timeout: 15_000 });
+  await page.getByTestId('drive-file-mock-drive-pdf-1').click();
+  await page.getByTestId('drive-picker-modal').waitFor({ state: 'hidden', timeout: 30_000 });
+  await expect(page.locator('.book-card').first()).toBeVisible({ timeout: 15_000 });
 }
 
 export async function savePhase2Video(page: Page, name: string): Promise<void> {

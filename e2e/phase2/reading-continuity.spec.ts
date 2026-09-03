@@ -1,8 +1,10 @@
 import { test, expect } from '@playwright/test';
-import { FIXTURE_FILES, importBook, openFirstBook } from '../helpers/test-utils';
+import { openFirstBook } from '../helpers/test-utils';
 import {
   closeAppMenu,
+  connectDriveViaUi,
   createPhase2Context,
+  importDriveBookViaUi,
   setDeviceDisplayName,
   setDeviceId,
   signInViaUi,
@@ -16,7 +18,9 @@ async function readToPage(page: import('@playwright/test').Page, pageNumber: num
 }
 
 test.describe('Phase 2 reading continuity', () => {
-  test('offers to continue from another device after synced reading', async ({ browser }) => {
+  test('offers to continue from another device after synced Drive reading', async ({
+    browser,
+  }) => {
     const deviceA = await createPhase2Context(browser);
     const deviceB = await createPhase2Context(browser);
     const pageA = await deviceA.newPage();
@@ -33,14 +37,16 @@ test.describe('Phase 2 reading continuity', () => {
 
     await signInViaUi(pageA);
     await closeAppMenu(pageA);
-    await importBook(pageA, FIXTURE_FILES.samplePdf);
+    await connectDriveViaUi(pageA);
+    await importDriveBookViaUi(pageA);
     await openFirstBook(pageA);
     await readToPage(pageA, 5);
     await pageA.getByRole('button', { name: 'Back to library' }).click();
 
     await signInViaUi(pageB);
     await closeAppMenu(pageB);
-    await importBook(pageB, FIXTURE_FILES.samplePdf);
+    await connectDriveViaUi(pageB);
+    await importDriveBookViaUi(pageB);
     await openFirstBook(pageB);
 
     const prompt = pageB.getByTestId('continuation-prompt');

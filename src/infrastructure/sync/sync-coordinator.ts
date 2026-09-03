@@ -106,7 +106,7 @@ export class SyncCoordinator implements SyncStateService {
     await this.flushPendingMutations(session.token, session.user.id);
   }
 
-  private async flushPendingMutations(token: string, accountId: string): Promise<void> {
+  private async flushPendingMutations(token: string, _accountId: string): Promise<void> {
     if (this.flushInFlight) {
       await this.flushInFlight;
       return;

@@ -6,10 +6,16 @@ import { getDeviceDisplayName, getDeviceId } from '@/infrastructure/device/devic
 import { syncStateService } from '@/infrastructure/sync';
 import type { ContinuationOffer, ReadingStatePush } from '@/infrastructure/sync/types';
 
-/** True when cloud sync is available and the user is signed in. */
-export function canSyncReadingState(hasSession: boolean): boolean {
-  // MVP: sync local books when logged in; cloud-source check comes with Drive.
-  return features.cloudEnabled && hasSession;
+const CLOUD_SYNC_SOURCES = new Set(['google-drive', 'luma-cloud', 'app-storage']);
+
+/** True when cloud sync is available for this book and the user is signed in. */
+export function canSyncReadingState(
+  hasSession: boolean,
+  book?: Pick<Book, 'source'> | null,
+): boolean {
+  if (!features.cloudEnabled || !hasSession || !book) return false;
+  const source = book.source ?? 'local';
+  return CLOUD_SYNC_SOURCES.has(source);
 }
 
 export function buildReadingStatePush(
@@ -33,7 +39,7 @@ export async function pushReadingStateIfEligible(
   progress: number,
   hasSession: boolean,
 ): Promise<void> {
-  if (!canSyncReadingState(hasSession)) return;
+  if (!canSyncReadingState(hasSession, book)) return;
 
   const format = book.format ?? 'pdf';
   const push = buildReadingStatePush(getDeviceId(), location, progress, format);
@@ -46,8 +52,9 @@ export async function fetchContinuationOffer(
   format: 'pdf' | 'epub',
   localLocation: DocumentLocation,
   hasSession: boolean,
+  book?: Pick<Book, 'source'> | null,
 ): Promise<ContinuationOffer> {
-  if (!canSyncReadingState(hasSession)) return null;
+  if (!canSyncReadingState(hasSession, book)) return null;
 
   const envelope = toReadingLocationEnvelope(format, localLocation);
   return syncStateService.getContinuationOffer(bookId, deviceId, envelope);

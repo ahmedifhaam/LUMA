@@ -23,6 +23,12 @@ vi.mock('@/infrastructure/device/device-id', () => ({
   getDeviceId: () => 'device-test',
 }));
 
+const cloudBook = {
+  id: 'book-abc',
+  source: 'google-drive' as const,
+  format: 'pdf' as const,
+};
+
 const offer: ContinuationOffer = {
   fromDeviceName: 'Work Laptop',
   session: {
@@ -47,7 +53,7 @@ describe('continuation-store', () => {
 
     await useContinuationStore
       .getState()
-      .checkOnOpen('book-abc', 'pdf', { pageNumber: 1, yOffset: 0 });
+      .checkOnOpen(cloudBook, { pageNumber: 1, yOffset: 0 });
 
     expect(useContinuationStore.getState().visible).toBe(true);
     useContinuationStore.getState().dismiss();
@@ -60,7 +66,7 @@ describe('continuation-store', () => {
 
     await useContinuationStore
       .getState()
-      .checkOnOpen('book-abc', 'pdf', { pageNumber: 1, yOffset: 0 });
+      .checkOnOpen(cloudBook, { pageNumber: 1, yOffset: 0 });
 
     const location = useContinuationStore.getState().accept();
 

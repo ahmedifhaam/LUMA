@@ -1,0 +1,44 @@
+---
+description: Playwright e2e and required PR screen recordings
+globs: e2e/**/*,playwright.config.ts
+alwaysApply: false
+---
+
+# Playwright and PR recordings
+
+## Projects
+
+| Project | Purpose |
+|---------|---------|
+| `chromium` / `mobile` | Phase 1 regression |
+| `phase2` | Phase 2 behavioural e2e (`e2e/phase2/*.spec.ts` except happy-paths) |
+| `phase2-recordings` | Named happy-path videos for PR review (`happy-paths.spec.ts`) |
+
+## Every Phase 2 PR
+
+1. Cover the new behaviour under `e2e/phase2/` (assert UI + sync outcomes).
+2. Extend or keep `happy-paths.spec.ts` recordings current for the demo flow.
+3. Run `npm run test:e2e:phase2` so CI can upload `e2e/artifacts/pr-videos/*.webm` + `manifest.json`.
+4. Use stable `data-testid` hooks (`app-menu-trigger`, `auth-modal`, `continuation-prompt`, …).
+
+## Recording conventions
+
+- Serial happy-path suite; save via `savePhase2Video` / `saveContextVideo` in `e2e/phase2/helpers/cloud-utils.ts`.
+- Name files `phase2-NN-short-slug.webm` and register them in `manifest.json` (`title` + `description`).
+- Simulate devices with `setDeviceId` / `setDeviceDisplayName` and separate browser contexts — not two accounts.
+
+## Helpers
+
+Reuse `e2e/helpers/test-utils.ts` and `e2e/phase2/helpers/*`. Prefer fixtures under `e2e/fixtures/` over generating large PDFs in-test.
+
+## ❌ / ✅
+
+```typescript
+// ❌ BAD — behaviour only verified manually; no artifact for the PR
+await page.click('text=Sign in');
+
+// ✅ GOOD — asserted e2e + named recording entry
+await signInViaUi(page);
+await savePhase2Video(page, 'phase2-01-app-menu-and-sign-in');
+recordings.push({ file: '...', title: '...', description: '...' });
+```
