@@ -1,10 +1,13 @@
 import { normalizeBookSource } from '@/domain/book/source';
 import type { Book } from '@/domain/book/types';
-import { localDocumentSourceAdapter } from './local-adapter';
+import { createCachedBytesAdapter } from './cached-bytes-adapter';
 import type { DocumentSourceAdapter } from './types';
 
 const adapters: Partial<Record<string, DocumentSourceAdapter>> = {
-  local: localDocumentSourceAdapter,
+  local: createCachedBytesAdapter('local'),
+  'google-drive': createCachedBytesAdapter('google-drive'),
+  'luma-cloud': createCachedBytesAdapter('luma-cloud'),
+  'app-storage': createCachedBytesAdapter('app-storage'),
 };
 
 export async function resolveBookBytes(book: Book): Promise<ArrayBuffer> {

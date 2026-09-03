@@ -15,6 +15,9 @@ export interface BookSourceStatus {
   /** True when using local/CI mock instead of real Google. */
   mock?: boolean;
   configured?: boolean;
+  /** Connected previously but provider calls are failing / revoked. */
+  degraded?: boolean;
+  reason?: string | null;
 }
 
 /** Catalog and import connector for cloud-backed book sources (Phase 2). */

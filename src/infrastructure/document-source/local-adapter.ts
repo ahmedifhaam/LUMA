@@ -5,6 +5,7 @@ import type { DocumentSourceAdapter } from './types';
 const MISSING_LOCAL_COPY =
   'This book has no locally stored copy. Re-import the file.';
 
+/** @deprecated Prefer createCachedBytesAdapter — kept for any direct imports. */
 export const localDocumentSourceAdapter: DocumentSourceAdapter = {
   kind: 'local',
   async resolveBytes(book: Book): Promise<ArrayBuffer> {

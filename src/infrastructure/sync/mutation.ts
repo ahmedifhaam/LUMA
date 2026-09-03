@@ -9,6 +9,7 @@ export interface SyncMutation {
   location: ReadingLocationEnvelope;
   progress: number;
   lastActiveAt: number;
+  contentVersion?: string;
   createdAt: number;
   attemptCount: number;
   nextAttemptAt: number;
@@ -34,6 +35,7 @@ export function createSyncMutation(
     location: ReadingLocationEnvelope;
     progress: number;
     lastActiveAt: number;
+    contentVersion?: string;
   },
   now = Date.now(),
 ): SyncMutation {
@@ -47,6 +49,7 @@ export function createSyncMutation(
     location: state.location,
     progress: state.progress,
     lastActiveAt: state.lastActiveAt,
+    contentVersion: state.contentVersion,
     createdAt: now,
     attemptCount: 0,
     nextAttemptAt: now,

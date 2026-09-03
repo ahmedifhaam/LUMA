@@ -10,6 +10,7 @@ import {
 } from './sync-meta-repository';
 import {
   enqueueMutation,
+  listPendingMutations,
   listReadyMutations,
   removeMutation,
   updateMutation,
@@ -20,8 +21,10 @@ import type {
   DeviceSession,
   ReadingLocationEnvelope,
   ReadingStatePush,
+  SyncBookStatus,
   SyncStateService,
 } from './types';
+import { SyncAuthError } from './types';
 
 function isOnline(): boolean {
   return typeof navigator === 'undefined' || navigator.onLine;
@@ -32,6 +35,7 @@ export class SyncCoordinator implements SyncStateService {
   private syncInFlight: Promise<void> | null = null;
   private retryTimer: ReturnType<typeof setTimeout> | null = null;
   private initialized = false;
+  private lastErrorByBook = new Map<string, string>();
 
   constructor(private readonly transport: SyncTransport) {}
 
@@ -48,6 +52,7 @@ export class SyncCoordinator implements SyncStateService {
         void this.syncNow();
       } else {
         void clearAllSyncData();
+        this.lastErrorByBook.clear();
         this.clearRetryTimer();
       }
     });
@@ -59,6 +64,7 @@ export class SyncCoordinator implements SyncStateService {
 
     const mutation = createSyncMutation(bookId, state);
     await enqueueMutation(mutation);
+    this.lastErrorByBook.delete(bookId);
     await this.scheduleFlush();
   }
 
@@ -71,10 +77,29 @@ export class SyncCoordinator implements SyncStateService {
     bookId: string,
     currentDeviceId: string,
     currentLocation: ReadingLocationEnvelope,
+    localContentVersion?: string | null,
   ): Promise<ContinuationOffer> {
     await this.syncNow();
     const sessions = await getCachedSessionsForBook(bookId);
-    return findContinuationOffer(sessions, currentDeviceId, currentLocation, Date.now());
+    return findContinuationOffer(
+      sessions,
+      currentDeviceId,
+      currentLocation,
+      Date.now(),
+      localContentVersion,
+    );
+  }
+
+  async getBookSyncStatus(bookId: string): Promise<SyncBookStatus> {
+    if (!isOnline()) {
+      const pending = await listPendingMutations();
+      if (pending.some((m) => m.bookId === bookId)) return 'offline';
+      return 'idle';
+    }
+    if (this.lastErrorByBook.has(bookId)) return 'error';
+    const pending = await listPendingMutations();
+    if (pending.some((m) => m.bookId === bookId)) return 'pending';
+    return 'synced';
   }
 
   async syncNow(): Promise<void> {
@@ -93,8 +118,16 @@ export class SyncCoordinator implements SyncStateService {
     const session = await authService.getSession();
     if (!session || !isOnline()) return;
 
-    await this.flushPendingMutations(session.token, session.user.id);
-    await this.pullRemoteChanges(session.token, session.user.id);
+    try {
+      await this.flushPendingMutations(session.token, session.user.id);
+      await this.pullRemoteChanges(session.token, session.user.id);
+    } catch (error) {
+      if (error instanceof SyncAuthError) {
+        await authService.signOut();
+        return;
+      }
+      throw error;
+    }
   }
 
   private async scheduleFlush(): Promise<void> {
@@ -126,7 +159,12 @@ export class SyncCoordinator implements SyncStateService {
       try {
         await this.transport.pushMutation(token, mutation);
         await removeMutation(mutation.mutationId);
-      } catch {
+        this.lastErrorByBook.delete(mutation.bookId);
+      } catch (error) {
+        if (error instanceof SyncAuthError) {
+          throw error;
+        }
+        this.lastErrorByBook.set(mutation.bookId, (error as Error).message);
         await this.markMutationFailed(mutation);
         this.scheduleRetry();
         return;
@@ -156,6 +194,7 @@ export class SyncCoordinator implements SyncStateService {
       await applyPulledSessions(sessions);
     }
 
+    // Advance cursor only after successful local application.
     if (nextCursor >= meta.pullCursor) {
       await saveSyncMeta({ accountId, pullCursor: nextCursor });
     }

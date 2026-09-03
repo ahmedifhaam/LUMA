@@ -22,5 +22,7 @@ export type {
   DeviceSession,
   ReadingLocationEnvelope,
   ReadingStatePush,
+  SyncBookStatus,
   SyncStateService,
 } from './types';
+export { SyncAuthError } from './types';

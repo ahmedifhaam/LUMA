@@ -68,6 +68,12 @@ export async function migrate(): Promise<void> {
       PRIMARY KEY (account_id, file_id)
     );
   `);
+
+  // Additive migrations for existing databases
+  await pool.query(`
+    ALTER TABLE reading_sessions
+      ADD COLUMN IF NOT EXISTS content_version TEXT
+  `);
 }
 
 export async function seedTestUser(): Promise<void> {

@@ -190,10 +190,15 @@ export function AppMenu({ onOpenShortcuts }: AppMenuProps) {
                     {driveStatus?.connected ? (
                       <>
                         <p className="app-menu__account" data-testid="drive-connected-label">
-                          Connected
+                          {driveStatus.degraded ? 'Degraded' : 'Connected'}
                           {driveStatus.email ? ` as ${driveStatus.email}` : ''}
                           {driveStatus.mock ? ' (mock)' : ''}
                         </p>
+                        {driveStatus.degraded && driveStatus.reason ? (
+                          <p className="app-menu__notice" data-testid="drive-degraded-reason">
+                            {driveStatus.reason}
+                          </p>
+                        ) : null}
                         <button
                           type="button"
                           className="app-menu__item"

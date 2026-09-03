@@ -16,6 +16,7 @@ syncRouter.post('/push', async (req: AuthedRequest, res) => {
     progress,
     lastActiveAt,
     mutationId,
+    contentVersion,
   } = req.body ?? {};
 
   if (!bookId || !deviceId || !deviceName || !location || typeof progress !== 'number') {
@@ -44,8 +45,8 @@ syncRouter.post('/push', async (req: AuthedRequest, res) => {
 
   const result = await pool.query<{ server_revision: string }>(
     `INSERT INTO reading_sessions
-       (account_id, device_id, device_name, book_id, location, progress, last_active_at, mutation_id, updated_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+       (account_id, device_id, device_name, book_id, location, progress, last_active_at, mutation_id, content_version, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
      ON CONFLICT (account_id, device_id, book_id)
      DO UPDATE SET
        device_name = EXCLUDED.device_name,
@@ -53,6 +54,7 @@ syncRouter.post('/push', async (req: AuthedRequest, res) => {
        progress = EXCLUDED.progress,
        last_active_at = EXCLUDED.last_active_at,
        mutation_id = EXCLUDED.mutation_id,
+       content_version = EXCLUDED.content_version,
        updated_at = NOW(),
        server_revision = nextval(pg_get_serial_sequence('reading_sessions', 'server_revision'))
      RETURNING server_revision`,
@@ -65,6 +67,7 @@ syncRouter.post('/push', async (req: AuthedRequest, res) => {
       progress,
       lastActiveAt ?? Date.now(),
       mutationId ?? null,
+      contentVersion ?? null,
     ],
   );
 
@@ -98,8 +101,9 @@ syncRouter.get('/pull', async (req: AuthedRequest, res) => {
     progress: number;
     last_active_at: string;
     server_revision: string;
+    content_version: string | null;
   }>(
-    `SELECT device_id, device_name, book_id, location, progress, last_active_at, server_revision
+    `SELECT device_id, device_name, book_id, location, progress, last_active_at, server_revision, content_version
      FROM reading_sessions
      WHERE account_id = $1 AND server_revision > $2${bookFilter}
      ORDER BY server_revision ASC
@@ -114,6 +118,7 @@ syncRouter.get('/pull', async (req: AuthedRequest, res) => {
     location: row.location,
     progress: row.progress,
     lastActiveAt: Number(row.last_active_at),
+    contentVersion: row.content_version ?? undefined,
   }));
 
   const nextCursor =

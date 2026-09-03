@@ -7,6 +7,7 @@ const mockImportBookFromBytes = vi.fn();
 vi.mock('@/infrastructure/auth', () => ({
   authService: {
     getSession: () => mockGetSession(),
+    signOut: vi.fn(),
   },
 }));
 
@@ -38,15 +39,23 @@ describe('GoogleDriveConnector', () => {
   it('reports connected status from the API', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({
-          connected: true,
-          email: 'mock-drive@example.com',
-          mock: true,
-          configured: true,
+      vi
+        .fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            connected: true,
+            email: 'mock-drive@example.com',
+            mock: true,
+            configured: true,
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({ files: [] }),
         }),
-      }),
     );
 
     await expect(connector.getStatus()).resolves.toEqual({
@@ -54,6 +63,8 @@ describe('GoogleDriveConnector', () => {
       email: 'mock-drive@example.com',
       mock: true,
       configured: true,
+      degraded: false,
+      reason: null,
     });
   });
 

@@ -49,6 +49,7 @@ export async function applyPulledSessions(
       location: session.location,
       progress: session.progress,
       lastActiveAt: session.lastActiveAt,
+      contentVersion: session.contentVersion,
       serverRevision: session.serverRevision ?? 0,
     };
     await put(STORE_SYNC_SESSIONS, cached);
@@ -57,14 +58,17 @@ export async function applyPulledSessions(
 
 export async function getCachedSessionsForBook(bookId: string): Promise<DeviceSession[]> {
   const cached = await getAllByIndex<CachedDeviceSession>(STORE_SYNC_SESSIONS, 'byBook', bookId);
-  return cached.map(({ deviceId, deviceName, bookId: id, location, progress, lastActiveAt }) => ({
-    deviceId,
-    deviceName,
-    bookId: id,
-    location,
-    progress,
-    lastActiveAt,
-  }));
+  return cached.map(
+    ({ deviceId, deviceName, bookId: id, location, progress, lastActiveAt, contentVersion }) => ({
+      deviceId,
+      deviceName,
+      bookId: id,
+      location,
+      progress,
+      lastActiveAt,
+      contentVersion,
+    }),
+  );
 }
 
 export async function clearSessionCache(): Promise<void> {

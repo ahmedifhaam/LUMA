@@ -26,6 +26,10 @@ export async function listReadyMutations(now: number): Promise<SyncMutation[]> {
     .sort((a, b) => a.createdAt - b.createdAt);
 }
 
+export async function listPendingMutations(): Promise<SyncMutation[]> {
+  return getAll<SyncMutation>(STORE_SYNC_QUEUE);
+}
+
 export async function updateMutation(mutation: SyncMutation): Promise<void> {
   await put(STORE_SYNC_QUEUE, mutation);
 }

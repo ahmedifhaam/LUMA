@@ -35,10 +35,38 @@ export class GoogleDriveConnector implements BookSourceConnector {
     const response = await fetch(`${apiBaseUrl()}/auth/google/status`, {
       headers: authHeaders(token),
     });
-    if (!response.ok) {
+    if (response.status === 401) {
+      await authService.signOut();
       return { connected: false, configured: true, mock: driveMockEnabled() };
     }
-    return (await response.json()) as BookSourceStatus;
+    if (!response.ok) {
+      return {
+        connected: false,
+        configured: true,
+        mock: driveMockEnabled(),
+        degraded: true,
+        reason: 'Unable to reach Google Drive status',
+      };
+    }
+    const status = (await response.json()) as BookSourceStatus;
+    if (!status.connected) return status;
+
+    // Probe list endpoint — connected but failing calls → degraded.
+    const list = await fetch(`${apiBaseUrl()}/drive/files`, {
+      headers: authHeaders(token),
+    });
+    if (list.status === 401) {
+      await authService.signOut();
+      return { connected: false, configured: true, mock: driveMockEnabled() };
+    }
+    if (!list.ok) {
+      return {
+        ...status,
+        degraded: true,
+        reason: 'Google Drive is temporarily unavailable. Local copies remain readable.',
+      };
+    }
+    return { ...status, degraded: false, reason: null };
   }
 
   async isAvailable(): Promise<boolean> {

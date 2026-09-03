@@ -14,24 +14,34 @@ export function ContinuationPrompt({ onContinue }: ContinuationPromptProps) {
   if (!visible || !offer) return null;
 
   const progress = Math.round(offer.session.progress * 100);
+  const incompatible = Boolean(offer.incompatibleContentVersion);
 
   return (
     <div className="continuation-prompt" data-testid="continuation-prompt">
-      <span className="continuation-prompt__text">
-        Continue from {offer.fromDeviceName} — {progress}%
-      </span>
+      {incompatible ? (
+        <span className="continuation-prompt__text" data-testid="continuation-incompatible">
+          A newer reading session exists on {offer.fromDeviceName}, but the cloud file
+          version changed — continuation is unavailable.
+        </span>
+      ) : (
+        <span className="continuation-prompt__text">
+          Continue from {offer.fromDeviceName} — {progress}%
+        </span>
+      )}
       <div className="continuation-prompt__actions">
-        <button
-          type="button"
-          className="btn btn--primary"
-          data-testid="continuation-continue"
-          onClick={() => {
-            const location = accept();
-            if (location) onContinue(location);
-          }}
-        >
-          Continue
-        </button>
+        {!incompatible ? (
+          <button
+            type="button"
+            className="btn btn--primary"
+            data-testid="continuation-continue"
+            onClick={() => {
+              const location = accept();
+              if (location) onContinue(location);
+            }}
+          >
+            Continue
+          </button>
+        ) : null}
         <button
           type="button"
           className="btn btn--ghost"
